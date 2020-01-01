@@ -40,18 +40,18 @@ def Generator(input_filters, output_filters, inner_filters, blocks = 9):
 
 def Discriminator(input_filters, inner_filters, layers):
   inputs = tf.keras.Input((None, None, input_filters));
-  results = tf.keras.layers.Conv2D(filters = inner_filters, kernel_size = (4,4), strides = (2,2), padding = (1,1))(inputs);
+  results = tf.keras.layers.Conv2D(filters = inner_filters, kernel_size = (4,4), strides = (2,2), padding = [(0,0),(1,1),(1,1),(0,0)])(inputs);
   results = tf.keras.layers.LeakyReLU(0.2)(results);
   for i in range(layers):
     m = min(2 ** i, 8);
-    results = tf.keras.layers.Conv2D(filters = inner_filters * m, kernel_size = (4,4), strides = (2,2), padding = (1,1))(results);
+    results = tf.keras.layers.Conv2D(filters = inner_filters * m, kernel_size = (4,4), strides = (2,2), padding = [(0,0),(1,1),(1,1),(0,0)])(results);
     results = tfa.layers.InstanceNormalization()(results);
     results = tf.keras.layers.LeakyReLU(0.2)(results);
   m = min(2 ** layers, 8);
-  results = tf.keras.layers.Conv2D(filters = inner_filters * m, kernel_size = (4,4), strides = (1,1), padding = (1,1))(results);
+  results = tf.keras.layers.Conv2D(filters = inner_filters * m, kernel_size = (4,4), strides = (1,1), padding = [(0,0),(1,1),(1,1),(0,0)])(results);
   results = tfa.layers.InstanceNormalization()(results);
   results = tf.keras.layers.LeakyReLU(0.2)(results);
-  results = tf.keras.layers.Conv2D(filters = 1, kernel_size = (4,4), strides = (1,1), padding = (1,1))(results);
+  results = tf.keras.layers.Conv2D(filters = 1, kernel_size = (4,4), strides = (1,1), padding = [(0,0),(1,1),(1,1),(0,0)])(results);
   return tf.keras.Model(inputs = inputs, outputs = results);
 
 if __name__ == "__main__":
