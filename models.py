@@ -97,8 +97,8 @@ class CycleGAN(tf.keras.Model):
     loss_idt_A = self.l1(fake_B, real_A);
     loss_idt_B = self.l1(fake_A, real_B);
     # distance from generated image to natural image
-    loss_GA = self.bce(pred_fake_B, tf.ones_like(pred_B));
-    loss_GB = self.bce(pred_fake_A, tf.ones_like(pred_A));
+    loss_GA = self.bce(pred_fake_B, tf.ones_like(pred_fake_B));
+    loss_GB = self.bce(pred_fake_A, tf.ones_like(pred_fake_A));
     # reconstruction loss
     loss_cycle_A = self.l1(rec_A, real_A);
     loss_cycle_B = self.l1(rec_B, real_B);
