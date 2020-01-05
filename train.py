@@ -35,10 +35,12 @@ def main():
       DA_loss = cycleGAN.DA_loss(outputs);  da_loss.update_state(da_loss);
       DB_loss = cycleGAN.DB_loss(outputs);  db_loss.update_state(db_loss);
     # update generator's parameters
-    g_grads = tape.gradient(G_loss, cycleGAN.GA.trainable_variables + cycleGAN.GB.trainable_variables);
+    ga_grads = tape.gradient(G_loss, cycleGAN.GA.trainable_variables);
+    gb_grads = tape.gradient(G_loss, cycleGAN.GB.trainable_variables);
     da_grads = tape.gradient(DA_loss, cycleGAN.DA.trainable_variables);
     db_grads = tape.gradient(DB_loss, cycleGAN.DB.trainable_variables);
-    optimizer.apply_gradients(zip(g_grads, cycleGAN.GA.trainable_variables + cycleGAN.GB.trainable_variables));
+    optimizer.apply_gradients(zip(ga_grads, cycleGAN.GA.trainable_variables));
+    optimizer.apply_gradients(zip(gb_grads, cycleGAN.GB.trainable_variables));
     optimizer.apply_gradients(zip(da_grads, cycleGAN.DA.trainable_variables));
     optimizer.apply_gradients(zip(db_grads, cycleGAN.DB.trainable_variables));
     # set all parameters trainable
