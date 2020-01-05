@@ -121,6 +121,24 @@ class CycleGAN(tf.keras.Model):
     fake_loss = self.bce(pred_fake_A, tf.zeros_like(pred_fake_A));
     return 0.5 * (real_loss + fake_loss);
 
+  def set_generator_trainable(self):
+
+    self.GA.trainable = True;
+    self.GB.trainable = True;
+    self.DA.trainable = False;
+    self.DB.trainable = False;
+
+  def set_discriminator_trainable(self):
+
+    self.GA.trainable = False;
+    self.GB.trainable = False;
+    self.DA.trainable = True;
+    self.DB.trainable = True;
+
+  def set_trainable(self):
+
+    self.trainable = True;
+
 if __name__ == "__main__":
   assert True == tf.executing_eagerly();
   inputs = tf.keras.Input((480,640,3));
