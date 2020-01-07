@@ -35,7 +35,7 @@ def main():
   while True:
     imageA, _ = next(A);
     imageB, _ = next(B);
-    with tf.GradientTape() as tape:
+    with tf.GradientTape(persistent=True) as tape:
       outputs = cycleGAN((imageA, imageB));
       G_loss = cycleGAN.G_loss(outputs);    g_loss.update_state(G_loss);
       DA_loss = cycleGAN.DA_loss(outputs);  da_loss.update_state(DA_loss);
