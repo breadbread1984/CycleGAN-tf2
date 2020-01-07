@@ -8,7 +8,7 @@ from models import CycleGAN;
 from create_dataset import parse_function_generator;
 from download_dataset import parse_function;
 
-batch_size = 100;
+batch_size = 8;
 img_shape = (255,255,3);
 
 def main():
@@ -38,8 +38,8 @@ def main():
     with tf.GradientTape() as tape:
       outputs = cycleGAN((imageA, imageB));
       G_loss = cycleGAN.G_loss(outputs);    g_loss.update_state(G_loss);
-      DA_loss = cycleGAN.DA_loss(outputs);  da_loss.update_state(da_loss);
-      DB_loss = cycleGAN.DB_loss(outputs);  db_loss.update_state(db_loss);
+      DA_loss = cycleGAN.DA_loss(outputs);  da_loss.update_state(DA_loss);
+      DB_loss = cycleGAN.DB_loss(outputs);  db_loss.update_state(DB_loss);
     # calculate gradients
     ga_grads = tape.gradient(G_loss, cycleGAN.GA.trainable_variables);
     gb_grads = tape.gradient(G_loss, cycleGAN.GB.trainable_variables);
