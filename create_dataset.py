@@ -28,12 +28,12 @@ def write_tfrecord(directory, filename):
     if filename.endswith('.jpg') or filename.endswith('.png'):
       img = cv2.imread(join(directory, filename));
       if img is None: continue;
-        trainsample = tf.train.Example(features = tf.train.Features(
-          feature = {
-            'data': tf.train.Feature(bytes_list = tf.train.BytesList(value = [img.tobytes()]))
-          }
-        ));
-        writer.write(trainsample.SerializeToString());
+      trainsample = tf.train.Example(features = tf.train.Features(
+        feature = {
+          'data': tf.train.Feature(bytes_list = tf.train.BytesList(value = [img.tobytes()]))
+        }
+      ));
+      writer.write(trainsample.SerializeToString());
     else: continue;
   writer.close();
 

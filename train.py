@@ -3,8 +3,10 @@
 import os;
 import numpy as np;
 import tensorflow as tf;
+import tensorflow_datasets as tfds;
 from models import CycleGAN;
 from create_dataset import parse_function_generator;
+from download_dataset import parse_function;
 
 batch_size = 100;
 img_shape = (255,255,3);
@@ -15,8 +17,12 @@ def main():
   cycleGAN = CycleGAN();
   optimizer = tf.keras.optimizers.Adam(2e-4);
   # load dataset
+  '''
   A = tf.data.TFRecordDataset(os.path.join('dataset', 'A.tfrecord')).map(parse_function_generator(img_shape)).shuffle(batch_size).batch(batch_size).__iter__();
   B = tf.data.TFRecordDataset(os.path.join('dataset', 'B.tfrecord')).map(parse_function_generator(img_shape)).shuffle(batch_size).batch(batch_size).__iter__();
+  '''
+  A = tfds.load(name = 'cycle_gan/horse2zebra', split = "trainA", download = False).map(parse_function).shuffle(batch_size).batch(batch_size).__iter__();
+  B = tfds.load(name = 'cycle_gan/horse2zebra', split = "trainB", download = False).map(parse_function).shuffle(batch_size).batch(batch_size).__iter__();
   # restore from existing checkpoint
   checkpoint = tf.train.Checkpoint(model = cycleGAN, optimizer = optimizer, optimizer_step = optimizer.iterations);
   checkpoint.restore(tf.train.latest_checkpoint('checkpoints'));

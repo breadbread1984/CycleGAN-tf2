@@ -3,7 +3,12 @@
 import tensorflow as tf;
 import tensorflow_datasets as tfds;
 
-def main():
+def parse_function(feature):
+
+  data = tf.cast(feature['image'], dtype = tf.float32);
+  return data, feature['label'];
+
+def download():
 
   # load dataset
   dataset_builder = tfds.builder('cycle_gan/horse2zebra');
@@ -17,5 +22,5 @@ def main():
 if __name__ == "__main__":
 
   assert tf.executing_eagerly();
-  main();
+  download();
 
