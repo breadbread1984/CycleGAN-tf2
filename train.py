@@ -21,8 +21,8 @@ def main():
   A = tf.data.TFRecordDataset(os.path.join('dataset', 'A.tfrecord')).map(parse_function_generator(img_shape)).shuffle(batch_size).batch(batch_size).__iter__();
   B = tf.data.TFRecordDataset(os.path.join('dataset', 'B.tfrecord')).map(parse_function_generator(img_shape)).shuffle(batch_size).batch(batch_size).__iter__();
   '''
-  A = tfds.load(name = 'cycle_gan/horse2zebra', split = "trainA", download = False).repeat(-1).map(parse_function).shuffle(batch_size).batch(batch_size).__iter__();
-  B = tfds.load(name = 'cycle_gan/horse2zebra', split = "trainB", download = False).repeat(-1).map(parse_function).shuffle(batch_size).batch(batch_size).__iter__();
+  A = tfds.load(name = 'cycle_gan/horse2zebra', split = "trainA", download = False).repeat(-1).map(parse_function).shuffle(batch_size).batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE).__iter__();
+  B = tfds.load(name = 'cycle_gan/horse2zebra', split = "trainB", download = False).repeat(-1).map(parse_function).shuffle(batch_size).batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE).__iter__();
   # restore from existing checkpoint
   checkpoint = tf.train.Checkpoint(model = cycleGAN, optimizer = optimizer, optimizer_step = optimizer.iterations);
   checkpoint.restore(tf.train.latest_checkpoint('checkpoints'));
