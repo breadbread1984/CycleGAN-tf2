@@ -4,6 +4,7 @@ import numpy as np;
 import tensorflow as tf;
 import tensorflow_addons as tfa;
 
+@tf.function(experimental_compile = True)
 def Generator(input_filters, output_filters, inner_filters, blocks = 9):
 
   # input
@@ -39,6 +40,7 @@ def Generator(input_filters, output_filters, inner_filters, blocks = 9):
   results = tf.keras.layers.Lambda(lambda x: tf.math.tanh(x))(results);
   return tf.keras.Model(inputs = inputs, outputs = results);
 
+@tf.function(experimental_compile = True)
 def Discriminator(input_filters, inner_filters, layers = 3):
 
   inputs = tf.keras.Input((None, None, input_filters));
@@ -71,6 +73,7 @@ class CycleGAN(tf.keras.Model):
     self.bce = tf.keras.losses.BinaryCrossentropy();
     self.l1 = tf.keras.losses.MeanAbsoluteError();
 
+  @tf.function(experimental_compile = True)
   def call(self, inputs):
 
     real_A = inputs[0];
@@ -90,6 +93,7 @@ class CycleGAN(tf.keras.Model):
     
     return (real_A, real_B, fake_B, pred_fake_B, pred_real_B, rec_A, fake_A, pred_fake_A, pred_real_A, rec_B);
 
+  @tf.function(experimental_compile = True)
   def G_loss(self, inputs):
     
     (real_A, real_B, fake_B, pred_fake_B, pred_real_B, rec_A, fake_A, pred_fake_A, pred_real_A, rec_B) = inputs;
@@ -107,6 +111,7 @@ class CycleGAN(tf.keras.Model):
            (loss_GA + loss_GB) + \
            self.CYCLE_LOSS_WEIGHT * (loss_cycle_A + loss_cycle_B);
 
+  @tf.function(experimental_compile = True)
   def DA_loss(self, inputs):
 
     (real_A, real_B, fake_B, pred_fake_B, pred_real_B, rec_A, fake_A, pred_fake_A, pred_real_A, rec_B) = inputs;
@@ -114,6 +119,7 @@ class CycleGAN(tf.keras.Model):
     fake_loss = self.bce(pred_fake_B, tf.zeros_like(pred_fake_B));
     return 0.5 * (real_loss + fake_loss);
     
+  @tf.function(experimental_compile = True)
   def DB_loss(self, inputs):
 
     (real_A, real_B, fake_B, pred_fake_B, pred_real_B, rec_A, fake_A, pred_fake_A, pred_real_A, rec_B) = inputs;
