@@ -8,7 +8,7 @@ from models import CycleGAN;
 from create_dataset import parse_function_generator;
 from download_dataset import parse_function;
 
-batch_size = 8;
+batch_size = 4;
 img_shape = (255,255,3);
 
 def main():
@@ -50,7 +50,7 @@ def main():
     optimizer.apply_gradients(zip(gb_grads, cycleGAN.GB.trainable_variables));
     optimizer.apply_gradients(zip(da_grads, cycleGAN.DA.trainable_variables));
     optimizer.apply_gradients(zip(db_grads, cycleGAN.DB.trainable_variables));
-    if tf.equal(optimizer.iterations % 100, 0):
+    if tf.equal(optimizer.iterations % 500, 0):
       with log.as_default():
         tf.summary.scalar('generator loss', g_loss.result(), step = optimizer.iterations);
         tf.summary.scalar('discriminator A loss', da_loss.result(), step = optimizer.iterations);
