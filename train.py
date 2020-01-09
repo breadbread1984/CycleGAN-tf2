@@ -59,8 +59,9 @@ def main():
       g_loss.reset_states();
       da_loss.reset_states();
       db_loss.reset_states();
-    # save model once every epoch
-    checkpoint.save(os.path.join('checkpoints', 'ckpt'));
+    if tf.equal(optimizer.iterations % 10000, 0):
+      # save model
+      checkpoint.save(os.path.join('checkpoints', 'ckpt'));
     if G_loss < 0.01 and DA_loss < 0.01 and DB_loss < 0.01: break;
   # save the network structure with weights
   if False == os.path.exists('models'): os.mkdir('models');
