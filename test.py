@@ -1,0 +1,31 @@
+#!/usr/bin/python3
+
+import cv2;
+import tensorflow as tf;
+import tensorflow_addons as tfa;
+import tensorflow_datasets as tfds;
+from download_dataset import parse_function;
+
+batch_size = 1;
+
+def test():
+
+  A = tfds.load(name = 'cycle_gan/horse2zebra', split = "testA", download = False).repeat(-1).map(parse_function).shuffle(batch_size).batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE).__iter__();
+  B = tfds.load(name = 'cycle_gan/horse2zebra', split = "testB", download = False).repeat(-1).map(parse_function).shuffle(batch_size).batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE).__iter__();
+  GA = tf.keras.models.load_model('models/GA.h5', compile = False, custom_objects = {'tf': tf});
+  GB = tf.keras.models.load_model('models/GB.h5', compile = False, custom_objects = {'tf': tf});
+  while True:
+    imageA, _ = next(A);
+    imageB, _ = next(B);
+    fakeB = GA(imageA);
+    fakeA = GB(imageB);
+    cv2.imshow('real A', cv2.cvtColor(imageA[0].numpy().astype('uint8'), cv2.COLOR_RGB2BGR));
+    cv2.imshow('fake B', cv2.cvtColor(fakeB[0].numpy().astype('uint8'), cv2.COLOR_RGB2BGR));
+    cv2.imshow('real B', cv2.cvtColor(imageB[0].numpy().astype('uint8'), cv2.COLOR_RGB2BGR));
+    cv2.imshow('fake A', cv2.cvtColor(fakeA[0].numpy().astype('uint8'), cv2.COLOR_RGB2BGR));
+    cv2.waitKey();
+
+if __name__ == "__main__":
+
+  assert tf.executing_eagerly();
+  test();
