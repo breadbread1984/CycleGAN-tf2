@@ -68,7 +68,7 @@ class CycleGAN(tf.keras.Model):
     self.GB = Generator(input_filters = output_filters, output_filters = input_filters, inner_filters = input_filters, blocks = blocks);
     self.DA = Discriminator(input_filters = output_filters, inner_filters = inner_filters, layers = layers);
     self.DB = Discriminator(input_filters = input_filters,  inner_filters = inner_filters, layers = layers);
-    self.bce = tf.keras.losses.BinaryCrossentropy();
+    self.bce = tf.keras.losses.BinaryCrossentropy(from_logits = True);
     self.l1 = tf.keras.losses.MeanAbsoluteError();
 
   def call(self, inputs):

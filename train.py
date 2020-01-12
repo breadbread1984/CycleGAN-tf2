@@ -15,7 +15,7 @@ def main():
 
   # models
   cycleGAN = CycleGAN();
-  optimizer = tf.keras.optimizers.Adam(2e-4);
+  optimizer = tf.keras.optimizers.Adam(learning_rate = tf.keras.optimizers.schedulers.InverseTimeDecay(2e-4, 0.3, 1000 / batch_size));
   # load dataset
   '''
   A = tf.data.TFRecordDataset(os.path.join('dataset', 'A.tfrecord')).map(parse_function_generator(img_shape)).shuffle(batch_size).batch(batch_size).__iter__();
