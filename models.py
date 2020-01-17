@@ -42,18 +42,19 @@ def Generator(input_filters, output_filters, inner_filters, blocks = 9):
 def Discriminator(input_filters, inner_filters, layers = 3):
 
   inputs = tf.keras.Input((None, None, input_filters));
-  results = tf.keras.layers.Conv2D(filters = inner_filters, kernel_size = (4,4), strides = (2,2), padding = [(0,0),(1,1),(1,1),(0,0)])(inputs);
+  results = tf.keras.layers.Conv2D(filters = inner_filters, kernel_size = (4,4), strides = (2,2), padding = 'same', kernel_initializer = tf.keras.initializers.RandomNormal(stddev = 0.02))(inputs);
   results = tf.keras.layers.LeakyReLU(0.2)(results);
   for i in range(layers):
-    m = min(2 ** i, 8);
-    results = tf.keras.layers.Conv2D(filters = inner_filters * m, kernel_size = (4,4), strides = (2,2), padding = [(0,0),(1,1),(1,1),(0,0)])(results);
-    results = tfa.layers.InstanceNormalization()(results);
+    # 128-256-512
+    m = min(2 ** (i + 1), 8);
+    results = tf.keras.layers.Conv2D(filters = inner_filters * m, kernel_size = (4,4), strides = (2,2), padding = 'same', kernel_initializer = tf.keras.initializers.RandomNormal(stddev = 0.02))(results);
+    results = tfa.layers.InstanceNormalization(axis = -1)(results);
     results = tf.keras.layers.LeakyReLU(0.2)(results);
-  m = min(2 ** layers, 8);
-  results = tf.keras.layers.Conv2D(filters = inner_filters * m, kernel_size = (4,4), strides = (1,1), padding = [(0,0),(1,1),(1,1),(0,0)])(results);
-  results = tfa.layers.InstanceNormalization()(results);
+  m = min(2 ** layers, 8); # 512
+  results = tf.keras.layers.Conv2D(filters = inner_filters * m, kernel_size = (4,4), padding = 'same', kernel_initializer = tf.keras.initializers.RandomNormal(stddev = 0.02))(results);
+  results = tfa.layers.InstanceNormalization(axis = -1)(results);
   results = tf.keras.layers.LeakyReLU(0.2)(results);
-  results = tf.keras.layers.Conv2D(filters = 1, kernel_size = (4,4), strides = (1,1), padding = [(0,0),(1,1),(1,1),(0,0)])(results);
+  results = tf.keras.layers.Conv2D(filters = 1, kernel_size = (4,4), padding = 'same', kernel_initializer = tf.keras.initializers.RandomNormal(stddev = 0.02))(results);
   return tf.keras.Model(inputs = inputs, outputs = results);
 
 class CycleGAN(tf.keras.Model):
@@ -94,14 +95,14 @@ class CycleGAN(tf.keras.Model):
     
     (real_A, real_B, fake_B, pred_fake_B, pred_real_B, rec_A, fake_A, pred_fake_A, pred_real_A, rec_B) = inputs;
     # generated image should not deviate too much from origin image
-    loss_idt_A = self.l1(fake_B, real_A);
-    loss_idt_B = self.l1(fake_A, real_B);
+    loss_idt_A = self.l1(real_A, fake_B);
+    loss_idt_B = self.l1(real_B, fake_A);
     # distance from generated image to natural image
-    loss_GA = self.bce(pred_fake_B, tf.ones_like(pred_fake_B));
-    loss_GB = self.bce(pred_fake_A, tf.ones_like(pred_fake_A));
+    loss_GA = self.bce(tf.ones_like(pred_fake_B), pred_fake_B);
+    loss_GB = self.bce(tf.ones_like(pred_fake_A), pred_fake_A);
     # reconstruction loss
-    loss_cycle_A = self.l1(rec_A, real_A);
-    loss_cycle_B = self.l1(rec_B, real_B);
+    loss_cycle_A = self.l1(real_A, rec_A);
+    loss_cycle_B = self.l1(real_B, rec_B);
     
     return self.CYCLE_LOSS_WEIGHT * self.IDENTITY_LOSS_WEIGHT * (loss_idt_A + loss_idt_B) + \
            (loss_GA + loss_GB) + \
@@ -110,15 +111,15 @@ class CycleGAN(tf.keras.Model):
   def DA_loss(self, inputs):
 
     (real_A, real_B, fake_B, pred_fake_B, pred_real_B, rec_A, fake_A, pred_fake_A, pred_real_A, rec_B) = inputs;
-    real_loss = self.bce(pred_real_B, tf.ones_like(pred_real_B));
-    fake_loss = self.bce(pred_fake_B, tf.zeros_like(pred_fake_B));
+    real_loss = self.bce(tf.ones_like(pred_real_B), pred_real_B);
+    fake_loss = self.bce(tf.zeros_like(pred_fake_B), pred_fake_B);
     return 0.5 * (real_loss + fake_loss);
 
   def DB_loss(self, inputs):
 
     (real_A, real_B, fake_B, pred_fake_B, pred_real_B, rec_A, fake_A, pred_fake_A, pred_real_A, rec_B) = inputs;
-    real_loss = self.bce(pred_real_A, tf.ones_like(pred_real_A));
-    fake_loss = self.bce(pred_fake_A, tf.zeros_like(pred_fake_A));
+    real_loss = self.bce(tf.ones_like(pred_real_A), pred_real_A);
+    fake_loss = self.bce(tf.zeros_like(pred_fake_A), pred_fake_A);
     return 0.5 * (real_loss + fake_loss);
 
 if __name__ == "__main__":
