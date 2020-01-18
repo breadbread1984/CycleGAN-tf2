@@ -23,6 +23,8 @@ def main():
   '''
   A = tfds.load(name = 'cycle_gan/horse2zebra', split = "trainA", download = False).repeat(-1).map(parse_function).shuffle(batch_size).batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE).__iter__();
   B = tfds.load(name = 'cycle_gan/horse2zebra', split = "trainB", download = False).repeat(-1).map(parse_function).shuffle(batch_size).batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE).__iter__();
+  testA = tfds.load(name = 'cycle_gan/horse2zebra', split = 'testA', download = False).repeat(-1).map(parse_function).batch(1).__iter__();
+  testB = tfds.load(name = 'cycle_gan/horse2zebra', split = 'testB', download = False).repeat(-1).map(parse_function).batch(1).__iter__();
   # restore from existing checkpoint
   checkpoint = tf.train.Checkpoint(model = cycleGAN, optimizer = optimizer, optimizer_step = optimizer.iterations);
   checkpoint.restore(tf.train.latest_checkpoint('checkpoints'));
@@ -51,10 +53,21 @@ def main():
     optimizer.apply_gradients(zip(da_grads, cycleGAN.DA.trainable_variables));
     optimizer.apply_gradients(zip(db_grads, cycleGAN.DB.trainable_variables));
     if tf.equal(optimizer.iterations % 500, 0):
+      imageA, _ = next(testA);
+      imageB, _ = next(testB);
+      outputs = cycleGAN((imageA, imageB));
+      real_A = imageA;
+      real_B = imageB;
+      fake_B = outputs[2];
+      fake_A = outputs[6];
       with log.as_default():
         tf.summary.scalar('generator loss', g_loss.result(), step = optimizer.iterations);
         tf.summary.scalar('discriminator A loss', da_loss.result(), step = optimizer.iterations);
         tf.summary.scalar('discriminator B loss', db_loss.result(), step = optimizer.iterations);
+        tf.summary.image('real A', real_A, step = optimizer.iterations);
+        tf.summary.image('fake B', fake_B, step = optimizer.iterations);
+        tf.summary.image('real B', real_B, step = optimizer.iterations);
+        tf.summary.image('fake A', fake_A, step = optimizer.iterations);
       print('Step #%d G Loss: %.6f DA Loss: %.6f DB Loss: %.6f' % (optimizer.iterations, g_loss.result(), da_loss.result(), db_loss.result()));
       g_loss.reset_states();
       da_loss.reset_states();
