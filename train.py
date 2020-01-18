@@ -8,7 +8,7 @@ from models import CycleGAN;
 from create_dataset import parse_function_generator;
 from download_dataset import parse_function;
 
-batch_size = 4;
+batch_size = 2;
 img_shape = (255,255,3);
 
 def main():
