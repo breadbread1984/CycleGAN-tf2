@@ -8,7 +8,7 @@ def Generator(input_filters = 3, output_filters = 3, inner_filters = 64, blocks 
 
   # input
   inputs = tf.keras.Input((None, None, input_filters));
-  results = tf.keras.layers.Conv2D(filters = inner_filters, kernel_size = (7,7), padding = 'same', kernel_initializer = tf.keras.initializers.RandomNormal(stddev = 0.02))(results);
+  results = tf.keras.layers.Conv2D(filters = inner_filters, kernel_size = (7,7), padding = 'same', kernel_initializer = tf.keras.initializers.RandomNormal(stddev = 0.02))(inputs);
   results = tfa.layers.InstanceNormalization(axis = -1)(results);
   results = tf.keras.layers.ReLU()(results);
   # downsampling
