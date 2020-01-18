@@ -76,9 +76,9 @@ class CycleGAN(tf.keras.Model):
     real_A = inputs[0];
     real_B = inputs[1];
     # real_A => GA => fake_B   fake_B => DA => pred_fake_B
-    #                          real_B => DA => pred_real_B
+    # real_B => GA => idt_B    real_B => DA => pred_real_B
     # real_B => GB => fake_A   fake_A => DB => pred_fake_A
-    #                          real_A => DB => pred_real_A
+    # real_A => GB => idt_A    real_A => DB => pred_real_A
     fake_B = self.GA(real_A);
     idt_B = self.GA(real_B);
     pred_fake_B = self.DA(fake_B);
