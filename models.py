@@ -32,7 +32,7 @@ def Generator(input_filters = 3, output_filters = 3, inner_filters = 64, blocks 
   # 128-64
   for i in range(2):
     m = 2**(1 - i);
-    results = tf.keras.layers.Conv2DTranspose(filters = inner_filters * m, kernel_size = (3,3), strides = (2,2), padding = 'same')(results);
+    results = tf.keras.layers.Conv2DTranspose(filters = inner_filters * m, kernel_size = (3,3), strides = (2,2), padding = 'same', kernel_initializer = tf.keras.initializers.RandomNormal(stddev = 0.02))(results);
     results = tfa.layers.InstanceNormalization(axis = -1)(results);
     results = tf.keras.layers.ReLU()(results);
   # output
