@@ -61,9 +61,6 @@ def Discriminator(input_filters, inner_filters, layers = 3):
 
 class CycleGAN(tf.keras.Model):
 
-  IDENTITY_LOSS_WEIGHT = 0.5;
-  CYCLE_LOSS_WEIGHT = 10.0;
-
   def __init__(self, input_filters = 3, output_filters = 3, inner_filters = 64, blocks = 9, layers = 3, ** kwargs):
 
     super(CycleGAN, self).__init__(**kwargs);
@@ -106,23 +103,21 @@ class CycleGAN(tf.keras.Model):
     loss_cycle_A = self.l1(real_A, rec_A);
     loss_cycle_B = self.l1(real_B, rec_B);
     
-    return self.CYCLE_LOSS_WEIGHT * self.IDENTITY_LOSS_WEIGHT * (loss_idt_A + loss_idt_B) + \
-           (loss_GA + loss_GB) + \
-           self.CYCLE_LOSS_WEIGHT * (loss_cycle_A + loss_cycle_B);
+    return 5 * (loss_idt_A + loss_idt_B) + (loss_GA + loss_GB) + 10 * (loss_cycle_A + loss_cycle_B);
 
   def DA_loss(self, inputs):
 
     (real_A, real_B, fake_B, pred_fake_B, pred_real_B, rec_A, fake_A, pred_fake_A, pred_real_A, rec_B) = inputs;
     real_loss = self.mse(tf.ones_like(pred_real_B), pred_real_B);
     fake_loss = self.mse(tf.zeros_like(pred_fake_B), pred_fake_B);
-    return 0.5 * (real_loss + fake_loss);
+    return real_loss + fake_loss;
 
   def DB_loss(self, inputs):
 
     (real_A, real_B, fake_B, pred_fake_B, pred_real_B, rec_A, fake_A, pred_fake_A, pred_real_A, rec_B) = inputs;
     real_loss = self.mse(tf.ones_like(pred_real_A), pred_real_A);
     fake_loss = self.mse(tf.zeros_like(pred_fake_A), pred_fake_A);
-    return 0.5 * (real_loss + fake_loss);
+    return real_loss + fake_loss;
 
 if __name__ == "__main__":
   assert True == tf.executing_eagerly();
