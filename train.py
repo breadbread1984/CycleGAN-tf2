@@ -59,8 +59,8 @@ def main():
       outputs = cycleGAN((imageA, imageB));
       real_A = tf.cast(imageA, dtype = tf.uint8);
       real_B = tf.cast(imageB, dtype = tf.uint8);
-      fake_B = tf.cast(outputs[2], dtype = tf.uint8);
-      fake_A = tf.cast(outputs[6], dtype = tf.uint8);
+      fake_B = tf.cast(outputs[1], dtype = tf.uint8);
+      fake_A = tf.cast(outputs[7], dtype = tf.uint8);
       with log.as_default():
         tf.summary.scalar('generator loss', g_loss.result(), step = optimizer.iterations);
         tf.summary.scalar('discriminator A loss', da_loss.result(), step = optimizer.iterations);
