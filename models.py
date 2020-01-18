@@ -80,22 +80,24 @@ class CycleGAN(tf.keras.Model):
     # real_B => GB => fake_A   fake_A => DB => pred_fake_A
     #                          real_A => DB => pred_real_A
     fake_B = self.GA(real_A);
+    idt_B = self.GA(real_B);
     pred_fake_B = self.DA(fake_B);
     pred_real_B = self.DA(real_B);
     rec_A = self.GB(fake_B);
     fake_A = self.GB(real_B);
+    idt_A = self.GB(real_A);
     pred_fake_A = self.DB(fake_A);
     pred_real_A = self.DB(real_A);
     rec_B = self.GA(fake_A);
     
-    return (real_A, real_B, fake_B, pred_fake_B, pred_real_B, rec_A, fake_A, pred_fake_A, pred_real_A, rec_B);
+    return (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B);
 
   def G_loss(self, inputs):
     
-    (real_A, real_B, fake_B, pred_fake_B, pred_real_B, rec_A, fake_A, pred_fake_A, pred_real_A, rec_B) = inputs;
+    (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
     # generated image should not deviate too much from origin image
-    loss_idt_A = self.l1(real_A, fake_B);
-    loss_idt_B = self.l1(real_B, fake_A);
+    loss_idt_A = self.l1(real_A, idt_A);
+    loss_idt_B = self.l1(real_B, idt_B);
     # distance from generated image to natural image
     loss_GA = self.mse(tf.ones_like(pred_fake_B), pred_fake_B);
     loss_GB = self.mse(tf.ones_like(pred_fake_A), pred_fake_A);
@@ -107,14 +109,14 @@ class CycleGAN(tf.keras.Model):
 
   def DA_loss(self, inputs):
 
-    (real_A, real_B, fake_B, pred_fake_B, pred_real_B, rec_A, fake_A, pred_fake_A, pred_real_A, rec_B) = inputs;
+    (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
     real_loss = self.mse(tf.ones_like(pred_real_B), pred_real_B);
     fake_loss = self.mse(tf.zeros_like(pred_fake_B), pred_fake_B);
     return real_loss + fake_loss;
 
   def DB_loss(self, inputs):
 
-    (real_A, real_B, fake_B, pred_fake_B, pred_real_B, rec_A, fake_A, pred_fake_A, pred_real_A, rec_B) = inputs;
+    (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
     real_loss = self.mse(tf.ones_like(pred_real_A), pred_real_A);
     fake_loss = self.mse(tf.zeros_like(pred_fake_A), pred_fake_A);
     return real_loss + fake_loss;
