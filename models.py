@@ -114,14 +114,14 @@ class CycleGAN(tf.keras.Model):
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
     real_loss = self.mse(tf.ones_like(pred_real_B), pred_real_B);
     fake_loss = self.mse(tf.zeros_like(pred_fake_B), pred_fake_B);
-    return real_loss + fake_loss;
+    return 0.5 * (real_loss + fake_loss);
 
   def DB_loss(self, inputs):
 
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
     real_loss = self.mse(tf.ones_like(pred_real_A), pred_real_A);
     fake_loss = self.mse(tf.zeros_like(pred_fake_A), pred_fake_A);
-    return real_loss + fake_loss;
+    return 0.5 * (real_loss + fake_loss);
 
 if __name__ == "__main__":
   assert True == tf.executing_eagerly();
