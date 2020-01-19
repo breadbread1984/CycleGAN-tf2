@@ -97,17 +97,29 @@ class CycleGAN(tf.keras.Model):
   def G_loss(self, inputs):
     
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
+    # wgan gradient penalty
+    rA = tf.random.uniform((fake_B.shape[0], 1, 1, 1), 0, 1);
+    hat_fake_B = rA * fake_B + (1 - rA) * real_B;
+    with tf.GradientTape() as g:
+      g.watch(hat_fake_B);
+      D = self.DA(hat_fake_B);
+    g_DA = g.gradient(D, hat_fake_B);
+    gp_loss_GA = tf.math.reduce_mean(pred_fake_B) - tf.math.reduce_mean(pred_real_B) + 10 * (tf.norm(g_DA + 1e-16, 2) - 1.)**2;
+    rB = tf.random.uniform((fake_A.shape[0], 1, 1, 1), 0, 1);
+    hat_fake_A = rB * fake_A + (1 - rB) * real_A;
+    with tf.GradientTape() as g:
+      g.watch(hat_fake_A);
+      D = self.DB(hat_fake_A);
+    g_DB = g.gradient(D, hat_fake_A);
+    gp_loss_GB = tf.math.reduce_mean(pred_fake_A) - tf.math.reduce_mean(pred_real_A) + 10 * (tf.norm(g_DB + 1e-16, 2) - 1.)**2;
     # generated image should not deviate too much from origin image
     loss_idt_A = self.l1(real_A, idt_A);
     loss_idt_B = self.l1(real_B, idt_B);
-    # distance from generated image to natural image
-    loss_GA = self.l2(tf.ones_like(pred_fake_B), pred_fake_B);
-    loss_GB = self.l2(tf.ones_like(pred_fake_A), pred_fake_A);
     # reconstruction loss
     loss_cycle_A = self.l1(real_A, rec_A);
     loss_cycle_B = self.l1(real_B, rec_B);
     
-    return 5 * (loss_idt_A + loss_idt_B) + (loss_GA + loss_GB) + 10 * (loss_cycle_A + loss_cycle_B);
+    return 5 * (loss_idt_A + loss_idt_B) + (gp_loss_GA + gp_loss_GB) + 10 * (loss_cycle_A + loss_cycle_B);
 
   def DA_loss(self, inputs):
 
@@ -119,18 +131,19 @@ class CycleGAN(tf.keras.Model):
   def DB_loss(self, inputs):
 
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
-    real_loss = self.l2(tf.ones_like(pred_real_A), pred_real_A);
-    fake_loss = self.l2(tf.zeros_like(pred_fake_A), pred_fake_A);
+    real_loss = self.l2(1, pred_real_A);
+    fake_loss = self.l2(0, pred_fake_A);
     return 0.5 * (real_loss + fake_loss);
 
 if __name__ == "__main__":
   assert True == tf.executing_eagerly();
-  inputs = tf.keras.Input((480,640,3));
-  generator = Generator(3, 512, 256);
+  inputs = tf.keras.Input((256,256,3));
+  generator = Generator(3, 3, 64);
   results = generator(inputs);
   generator.save('generator.h5');
-  discriminator = Discriminator(512,256, 2);
+  discriminator = Discriminator(3, 64, 3);
   outputs = discriminator(results);
+  print(discriminator.outputs[0].shape)
   discriminator.save('discriminator.h5');
   cyclegan = CycleGAN();
   cyclegan.save_weights('cyclegan.h5');
