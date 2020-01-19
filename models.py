@@ -68,7 +68,7 @@ class CycleGAN(tf.keras.Model):
     self.GB = Generator(input_filters = output_filters, output_filters = input_filters, inner_filters = input_filters, blocks = blocks);
     self.DA = Discriminator(input_filters = output_filters, inner_filters = inner_filters, layers = layers);
     self.DB = Discriminator(input_filters = input_filters,  inner_filters = inner_filters, layers = layers);
-    self.mse = tf.keras.losses.MeanSquaredError();
+    self.l2 = tf.keras.losses.MeanSquaredError();
     self.l1 = tf.keras.losses.MeanAbsoluteError();
 
   def call(self, inputs):
@@ -101,8 +101,8 @@ class CycleGAN(tf.keras.Model):
     loss_idt_A = self.l1(real_A, idt_A);
     loss_idt_B = self.l1(real_B, idt_B);
     # distance from generated image to natural image
-    loss_GA = self.mse(tf.ones_like(pred_fake_B), pred_fake_B);
-    loss_GB = self.mse(tf.ones_like(pred_fake_A), pred_fake_A);
+    loss_GA = self.l2(tf.ones_like(pred_fake_B), pred_fake_B);
+    loss_GB = self.l2(tf.ones_like(pred_fake_A), pred_fake_A);
     # reconstruction loss
     loss_cycle_A = self.l1(real_A, rec_A);
     loss_cycle_B = self.l1(real_B, rec_B);
@@ -112,15 +112,15 @@ class CycleGAN(tf.keras.Model):
   def DA_loss(self, inputs):
 
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
-    real_loss = self.mse(tf.ones_like(pred_real_B), pred_real_B);
-    fake_loss = self.mse(tf.zeros_like(pred_fake_B), pred_fake_B);
+    real_loss = self.l2(tf.ones_like(pred_real_B), pred_real_B);
+    fake_loss = self.l2(tf.zeros_like(pred_fake_B), pred_fake_B);
     return 0.5 * (real_loss + fake_loss);
 
   def DB_loss(self, inputs):
 
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
-    real_loss = self.mse(tf.ones_like(pred_real_A), pred_real_A);
-    fake_loss = self.mse(tf.zeros_like(pred_fake_A), pred_fake_A);
+    real_loss = self.l2(tf.ones_like(pred_real_A), pred_real_A);
+    fake_loss = self.l2(tf.zeros_like(pred_fake_A), pred_fake_A);
     return 0.5 * (real_loss + fake_loss);
 
 if __name__ == "__main__":
