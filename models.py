@@ -68,7 +68,6 @@ class CycleGAN(tf.keras.Model):
     self.GB = Generator(input_filters = output_filters, output_filters = input_filters, inner_filters = input_filters, blocks = blocks);
     self.DA = Discriminator(input_filters = output_filters, inner_filters = inner_filters, layers = layers);
     self.DB = Discriminator(input_filters = input_filters,  inner_filters = inner_filters, layers = layers);
-    self.l2 = tf.keras.losses.MeanSquaredError();
     self.l1 = tf.keras.losses.MeanAbsoluteError();
 
   def call(self, inputs):
@@ -98,20 +97,8 @@ class CycleGAN(tf.keras.Model):
     
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
     # wgan gradient penalty
-    rA = tf.random.uniform((fake_B.shape[0], 1, 1, 1), 0, 1);
-    hat_fake_B = rA * fake_B + (1 - rA) * real_B;
-    with tf.GradientTape() as g:
-      g.watch(hat_fake_B);
-      D = self.DA(hat_fake_B);
-    g_DA = g.gradient(D, hat_fake_B);
-    gp_loss_GA = tf.math.reduce_mean(pred_fake_B) - tf.math.reduce_mean(pred_real_B) + 10 * (tf.norm(g_DA + 1e-16, 2) - 1.)**2;
-    rB = tf.random.uniform((fake_A.shape[0], 1, 1, 1), 0, 1);
-    hat_fake_A = rB * fake_A + (1 - rB) * real_A;
-    with tf.GradientTape() as g:
-      g.watch(hat_fake_A);
-      D = self.DB(hat_fake_A);
-    g_DB = g.gradient(D, hat_fake_A);
-    gp_loss_GB = tf.math.reduce_mean(pred_fake_A) - tf.math.reduce_mean(pred_real_A) + 10 * (tf.norm(g_DB + 1e-16, 2) - 1.)**2;
+    loss_adv_A = -tf.math.reduce_mean(pred_fake_B);
+    loss_adv_B = -tf.math.reduce_mean(pred_fake_A);
     # generated image should not deviate too much from origin image
     loss_idt_A = self.l1(real_A, idt_A);
     loss_idt_B = self.l1(real_B, idt_B);
@@ -119,21 +106,33 @@ class CycleGAN(tf.keras.Model):
     loss_cycle_A = self.l1(real_A, rec_A);
     loss_cycle_B = self.l1(real_B, rec_B);
     
-    return 5 * (loss_idt_A + loss_idt_B) + (gp_loss_GA + gp_loss_GB) + 10 * (loss_cycle_A + loss_cycle_B);
+    return 5 * (loss_idt_A + loss_idt_B) + (loss_adv_A + loss_adv_B) + 10 * (loss_cycle_A + loss_cycle_B);
 
   def DA_loss(self, inputs):
 
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
-    real_loss = self.l2(tf.ones_like(pred_real_B), pred_real_B);
-    fake_loss = self.l2(tf.zeros_like(pred_fake_B), pred_fake_B);
-    return 0.5 * (real_loss + fake_loss);
+    real_loss = tf.math.reduce_mean(pred_real_B);
+    fake_loss = tf.math.reduce_mean(pred_fake_B);
+    r = tf.random.uniform((real_B.shape[0], 1, 1, 1), dtype = tf.float32);
+    interp_B = r * real_B + (1 - r) * fake_B;
+    with tf.GradientTape() as g:
+      g.watch(interp_B);
+      pred_interp_B = self.DA(interp_B);
+    g_DA = g.gradient(pred_interp_B, interp_B);
+    return fake_loss - real_loss + 10 * (tf.norm(g_DA, 2) - 1.) ** 2;
 
   def DB_loss(self, inputs):
 
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
-    real_loss = self.l2(1, pred_real_A);
-    fake_loss = self.l2(0, pred_fake_A);
-    return 0.5 * (real_loss + fake_loss);
+    real_loss = tf.math.reduce_mean(pred_real_A);
+    fake_loss = tf.math.reduce_mean(pred_fake_A);
+    r = tf.random.uniform((real_A.shape[0], 1, 1, 1), dtype = tf.float32);
+    interp_A = r * real_A + (1 - r) * fake_A;
+    with tf.GradientTape() as g:
+      g.watch(interp_A);
+      pred_interp_A = self.DB(interp_A);
+    g_DB = g.gradient(pred_interp_A, interp_A);
+    return fake_loss - real_loss + 10 * (tf.norm(g_DB, 2) - 1.) ** 2;
 
 if __name__ == "__main__":
   assert True == tf.executing_eagerly();
