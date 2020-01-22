@@ -32,27 +32,30 @@ def main():
   # create log
   log = tf.summary.create_file_writer('checkpoints');
   # train model
-  g_loss = tf.keras.metrics.Mean(name = 'G loss', dtype = tf.float32);
-  da_loss = tf.keras.metrics.Mean(name = 'DA loss', dtype = tf.float32);
-  db_loss = tf.keras.metrics.Mean(name = 'DB loss', dtype = tf.float32);
+  avg_g_loss = tf.keras.metrics.Mean(name = 'G loss', dtype = tf.float32);
+  avg_da_loss = tf.keras.metrics.Mean(name = 'DA loss', dtype = tf.float32);
+  avg_db_loss = tf.keras.metrics.Mean(name = 'DB loss', dtype = tf.float32);
   while True:
     for i in range(5):
       imageA, _ = next(A);
       imageB, _ = next(B);
       with tf.GradientTape(persistent = True) as tape:
         outputs = cycleGAN((imageA, imageB));
-        G_loss = cycleGAN.G_loss(outputs);    g_loss.update_state(G_loss);
-        DA_loss = cycleGAN.DA_loss(outputs);  da_loss.update_state(DA_loss);
-        DB_loss = cycleGAN.DB_loss(outputs);  db_loss.update_state(DB_loss);
+        G_loss = cycleGAN.G_loss(outputs);
+        DA_loss = cycleGAN.DA_loss(outputs);
+        DB_loss = cycleGAN.DB_loss(outputs);
       # calculate discriminator gradients
       da_grads = tape.gradient(DA_loss, cycleGAN.DA.trainable_variables);
       db_grads = tape.gradient(DB_loss, cycleGAN.DB.trainable_variables);
+      avg_da_loss.update_state(DA_loss);
+      avg_db_loss.update_state(DB_loss);
       # update discriminator weights
       optimizer.apply_gradients(zip(da_grads, cycleGAN.DA.trainable_variables));
       optimizer.apply_gradients(zip(db_grads, cycleGAN.DB.trainable_variables));
     # calculate generator gradients
     ga_grads = tape.gradient(G_loss, cycleGAN.GA.trainable_variables);
     gb_grads = tape.gradient(G_loss, cycleGAN.GB.trainable_variables);
+    avg_g_loss.update_state(G_loss);
     # update generator weights
     optimizer.apply_gradients(zip(ga_grads, cycleGAN.GA.trainable_variables));
     optimizer.apply_gradients(zip(gb_grads, cycleGAN.GB.trainable_variables));
@@ -65,17 +68,17 @@ def main():
       fake_B = tf.cast(tf.clip_by_value(outputs[1] * 255., clip_value_min = 0., clip_value_max = 255.), dtype = tf.uint8);
       fake_A = tf.cast(tf.clip_by_value(outputs[7] * 255., clip_value_min = 0., clip_value_max = 255.), dtype = tf.uint8);
       with log.as_default():
-        tf.summary.scalar('generator loss', g_loss.result(), step = optimizer.iterations);
-        tf.summary.scalar('discriminator A loss', da_loss.result(), step = optimizer.iterations);
-        tf.summary.scalar('discriminator B loss', db_loss.result(), step = optimizer.iterations);
+        tf.summary.scalar('generator loss', avg_g_loss.result(), step = optimizer.iterations);
+        tf.summary.scalar('discriminator A loss', avg_da_loss.result(), step = optimizer.iterations);
+        tf.summary.scalar('discriminator B loss', avg_db_loss.result(), step = optimizer.iterations);
         tf.summary.image('real A', real_A, step = optimizer.iterations);
         tf.summary.image('fake B', fake_B, step = optimizer.iterations);
         tf.summary.image('real B', real_B, step = optimizer.iterations);
         tf.summary.image('fake A', fake_A, step = optimizer.iterations);
-      print('Step #%d G Loss: %.6f DA Loss: %.6f DB Loss: %.6f' % (optimizer.iterations, g_loss.result(), da_loss.result(), db_loss.result()));
-      g_loss.reset_states();
-      da_loss.reset_states();
-      db_loss.reset_states();
+      print('Step #%d G Loss: %.6f DA Loss: %.6f DB Loss: %.6f' % (optimizer.iterations, avg_g_loss.result(), avg_da_loss.result(), avg_db_loss.result()));
+      avg_g_loss.reset_states();
+      avg_da_loss.reset_states();
+      avg_db_loss.reset_states();
     if tf.equal(optimizer.iterations % 10000, 0):
       # save model
       checkpoint.save(os.path.join('checkpoints', 'ckpt'));
