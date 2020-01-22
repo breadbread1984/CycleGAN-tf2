@@ -19,10 +19,10 @@ def test():
     imageB, _ = next(B);
     fakeB = GA(imageA);
     fakeA = GB(imageB);
-    cv2.imshow('real A', cv2.cvtColor(imageA[0].numpy().astype('uint8'), cv2.COLOR_RGB2BGR));
-    cv2.imshow('fake B', cv2.cvtColor(fakeB[0].numpy().astype('uint8'), cv2.COLOR_RGB2BGR));
-    cv2.imshow('real B', cv2.cvtColor(imageB[0].numpy().astype('uint8'), cv2.COLOR_RGB2BGR));
-    cv2.imshow('fake A', cv2.cvtColor(fakeA[0].numpy().astype('uint8'), cv2.COLOR_RGB2BGR));
+    cv2.imshow('real A', cv2.cvtColor(tf.clip_by_value(imageA[0] * 255., clip_value_min = 0., clip_value_max = 255.).numpy().astype('uint8'), cv2.COLOR_RGB2BGR));
+    cv2.imshow('fake B', cv2.cvtColor(tf.clip_by_value(fakeB[0] * 255., clip_value_min = 0., clip_value_max = 255.).numpy().astype('uint8'), cv2.COLOR_RGB2BGR));
+    cv2.imshow('real B', cv2.cvtColor(tf.clip_by_value(imageB[0] * 255., clip_value_min = 0., clip_value_max = 255.).numpy().astype('uint8'), cv2.COLOR_RGB2BGR));
+    cv2.imshow('fake A', cv2.cvtColor(tf.clip_by_value(fakeA[0] * 255., clip_value_min = 0., clip_value_max = 255.).numpy().astype('uint8'), cv2.COLOR_RGB2BGR));
     cv2.waitKey();
 
 if __name__ == "__main__":

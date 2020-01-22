@@ -5,7 +5,7 @@ import tensorflow_datasets as tfds;
 
 def parse_function(feature):
 
-  data = tf.cast(feature['image'], dtype = tf.float32);
+  data = tf.cast(feature['image'], dtype = tf.float32) / 255.;
   return data, feature['label'];
 
 def download():
