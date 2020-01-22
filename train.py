@@ -36,23 +36,26 @@ def main():
   da_loss = tf.keras.metrics.Mean(name = 'DA loss', dtype = tf.float32);
   db_loss = tf.keras.metrics.Mean(name = 'DB loss', dtype = tf.float32);
   while True:
-    imageA, _ = next(A);
-    imageB, _ = next(B);
-    with tf.GradientTape(persistent=True) as tape:
-      outputs = cycleGAN((imageA, imageB));
-      G_loss = cycleGAN.G_loss(outputs);    g_loss.update_state(G_loss);
-      DA_loss = cycleGAN.DA_loss(outputs);  da_loss.update_state(DA_loss);
-      DB_loss = cycleGAN.DB_loss(outputs);  db_loss.update_state(DB_loss);
-    # calculate gradients
+    for i in range(5):
+      imageA, _ = next(A);
+      imageB, _ = next(B);
+      with tf.GradientTape(persistent = True) as tape:
+        outputs = cycleGAN((imageA, imageB));
+        G_loss = cycleGAN.G_loss(outputs);    g_loss.update_state(G_loss);
+        DA_loss = cycleGAN.DA_loss(outputs);  da_loss.update_state(DA_loss);
+        DB_loss = cycleGAN.DB_loss(outputs);  db_loss.update_state(DB_loss);
+      # calculate discriminator gradients
+      da_grads = tape.gradient(DA_loss, cycleGAN.DA.trainable_variables);
+      db_grads = tape.gradient(DB_loss, cycleGAN.DB.trainable_variables);
+      # update discriminator weights
+      optimizer.apply_gradients(zip(da_grads, cycleGAN.DA.trainable_variables));
+      optimizer.apply_gradients(zip(db_grads, cycleGAN.DB.trainable_variables));
+    # calculate generator gradients
     ga_grads = tape.gradient(G_loss, cycleGAN.GA.trainable_variables);
     gb_grads = tape.gradient(G_loss, cycleGAN.GB.trainable_variables);
-    da_grads = tape.gradient(DA_loss, cycleGAN.DA.trainable_variables);
-    db_grads = tape.gradient(DB_loss, cycleGAN.DB.trainable_variables);
-    # update weights
+    # update generator weights
     optimizer.apply_gradients(zip(ga_grads, cycleGAN.GA.trainable_variables));
     optimizer.apply_gradients(zip(gb_grads, cycleGAN.GB.trainable_variables));
-    optimizer.apply_gradients(zip(da_grads, cycleGAN.DA.trainable_variables));
-    optimizer.apply_gradients(zip(db_grads, cycleGAN.DB.trainable_variables));
     if tf.equal(optimizer.iterations % 500, 0):
       imageA, _ = next(testA);
       imageB, _ = next(testB);
