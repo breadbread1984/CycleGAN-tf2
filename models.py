@@ -69,6 +69,7 @@ class CycleGAN(tf.keras.Model):
     self.DA = Discriminator(input_filters = output_filters, inner_filters = inner_filters, layers = layers);
     self.DB = Discriminator(input_filters = input_filters,  inner_filters = inner_filters, layers = layers);
     self.l1 = tf.keras.losses.MeanAbsoluteError();
+    self.l2 = tf.keras.losses.MeanSquaredError();
 
   def call(self, inputs):
 
@@ -97,8 +98,8 @@ class CycleGAN(tf.keras.Model):
     
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
     # wgan gradient penalty
-    loss_adv_A = -tf.math.reduce_mean(pred_fake_B);
-    loss_adv_B = -tf.math.reduce_mean(pred_fake_A);
+    loss_adv_A = self.l2(1, pred_fake_B);
+    loss_adv_B = self.l2(1, pred_fake_A);
     # generated image should not deviate too much from origin image
     loss_idt_A = self.l1(real_A, idt_A);
     loss_idt_B = self.l1(real_B, idt_B);
@@ -111,28 +112,16 @@ class CycleGAN(tf.keras.Model):
   def DA_loss(self, inputs):
 
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
-    real_loss = tf.math.reduce_mean(pred_real_B);
-    fake_loss = tf.math.reduce_mean(pred_fake_B);
-    r = tf.random.uniform((real_B.shape[0], 1, 1, 1), dtype = tf.float32);
-    interp_B = r * real_B + (1 - r) * fake_B;
-    with tf.GradientTape() as g:
-      g.watch(interp_B);
-      pred_interp_B = self.DA(interp_B);
-    g_DA = g.gradient(pred_interp_B, interp_B);
-    return fake_loss - real_loss + 10 * (tf.norm(g_DA, 2) - 1.) ** 2;
+    real_loss = self.l2(1, pred_real_B);
+    fake_loss = self.l2(0, pred_fake_B);
+    return 0.5 * (real_loss + fake_loss);
 
   def DB_loss(self, inputs):
 
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
-    real_loss = tf.math.reduce_mean(pred_real_A);
-    fake_loss = tf.math.reduce_mean(pred_fake_A);
-    r = tf.random.uniform((real_A.shape[0], 1, 1, 1), dtype = tf.float32);
-    interp_A = r * real_A + (1 - r) * fake_A;
-    with tf.GradientTape() as g:
-      g.watch(interp_A);
-      pred_interp_A = self.DB(interp_A);
-    g_DB = g.gradient(pred_interp_A, interp_A);
-    return fake_loss - real_loss + 10 * (tf.norm(g_DB, 2) - 1.) ** 2;
+    real_loss = self.l2(1, pred_real_A);
+    fake_loss = self.l2(0, pred_fake_A);
+    return 0.5 * (real_loss + fake_loss);
 
 if __name__ == "__main__":
   assert True == tf.executing_eagerly();
