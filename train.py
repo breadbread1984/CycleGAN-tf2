@@ -27,7 +27,7 @@ class LrSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
 
     if step <= float(self.decay_from_epoch * self.BATCHES_PER_EPOCH):
       return self.initial_learning_rate;
-    if self > float(self.total_epoch * self.BATCHES_PER_EPOCH):
+    if step > float(self.total_epoch * self.BATCHES_PER_EPOCH):
       return 0.;
     return (self.total_epoch * self.BATCHES_PER_EPOCH - step) / ((self.total_epoch - self.decay_from_epoch) * self.BATCHES_PER_EPOCH) * self.initial_learning_rate;
 
