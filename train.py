@@ -16,9 +16,9 @@ class LrSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
 
   def __init__(self, initial_learning_rate, decay_from_epoch = 100, total_epoch = 200):
 
-    self.initial_learning_rate = float(initial_learning_rate);
-    self.decay_from_epoch = float(decay_from_epoch);
-    self.total_epoch = float(total_epoch);
+    self.initial_learning_rate = tf.constant(initial_learning_rate, dtype = tf.float32);
+    self.decay_from_epoch = tf.constant(decay_from_epoch, dtype = tf.float32);
+    self.total_epoch = tf.constant(total_epoch, dtype = tf.float32);
     self.batches_per_epoch = dataset_size / batch_size;
 
   def __call__(self, step):
