@@ -27,7 +27,7 @@ class LrSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
       return self.initial_learning_rate;
     if self > self.total_epoch * self.BATCHES_PER_EPOCH:
       return 0.;
-    return (self.total_epoch * self.BATCHES_PER_EPOCH - step) / (self.total_epoch * self.BATCHES_PER_EPOCH) * self.initial_learning_rate;
+    return (self.total_epoch * self.BATCHES_PER_EPOCH - step) / ((self.total_epoch - self.decay_from_epoch) * self.BATCHES_PER_EPOCH) * self.initial_learning_rate;
 
 def main():
 
@@ -91,7 +91,8 @@ def main():
         tf.summary.image('fake B', fake_B, step = optimizer.iterations);
         tf.summary.image('real B', real_B, step = optimizer.iterations);
         tf.summary.image('fake A', fake_A, step = optimizer.iterations);
-      print('Step #%d G Loss: %.6f DA Loss: %.6f DB Loss: %.6f' % (optimizer.iterations, avg_g_loss.result(), avg_da_loss.result(), avg_db_loss.result()));
+      print('Step #%d G Loss: %.6f DA Loss: %.6f DB Loss: %.6f lr: %.6f' % \
+            (optimizer.iterations, avg_g_loss.result(), avg_da_loss.result(), avg_db_loss.result(), optimizer._hyper['learning_rate']));
       avg_g_loss.reset_states();
       avg_da_loss.reset_states();
       avg_db_loss.reset_states();
