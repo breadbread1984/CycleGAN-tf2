@@ -17,7 +17,7 @@ def main():
   # models
   cycleGAN = CycleGAN();
   optimizer = tf.keras.optimizers.Adam(
-    keras.optimizers.schedules.PiecewiseConstantDecay(
+    tf.keras.optimizers.schedules.PiecewiseConstantDecay(
       boundaries = [dataset_size * 100 + i * dataset_size * 100 / 4 for i in range(5)],
       values = list(reversed([i * 2e-4 / 5 for i in range(6)]))),
     beta_1 = 0.5);
