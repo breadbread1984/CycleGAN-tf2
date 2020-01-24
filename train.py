@@ -18,16 +18,16 @@ class LrSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
 
   def __init__(self, initial_learning_rate, decay_from_epoch = 100, total_epoch = 200):
 
-    self.initial_learning_rate = initial_learning_rate;
-    self.decay_from_epoch = decay_from_epoch;
-    self.total_epoch = total_epoch;
+    self.initial_learning_rate = float(initial_learning_rate);
+    self.decay_from_epoch = float(decay_from_epoch);
+    self.total_epoch = float(total_epoch);
 
   @tf.function
   def __call__(self, step):
 
-    if step <= float(self.decay_from_epoch * self.BATCHES_PER_EPOCH):
+    if step <= self.decay_from_epoch * self.BATCHES_PER_EPOCH:
       return self.initial_learning_rate;
-    if step > float(self.total_epoch * self.BATCHES_PER_EPOCH):
+    if step > self.total_epoch * self.BATCHES_PER_EPOCH:
       return 0.;
     return (self.total_epoch * self.BATCHES_PER_EPOCH - step) / ((self.total_epoch - self.decay_from_epoch) * self.BATCHES_PER_EPOCH) * self.initial_learning_rate;
 
