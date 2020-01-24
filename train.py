@@ -14,22 +14,22 @@ img_shape = (255,255,3);
 
 class LrSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
 
-  BATCHES_PER_EPOCH = dataset_size / batch_size;
-
   def __init__(self, initial_learning_rate, decay_from_epoch = 100, total_epoch = 200):
 
     self.initial_learning_rate = float(initial_learning_rate);
     self.decay_from_epoch = float(decay_from_epoch);
     self.total_epoch = float(total_epoch);
+    self.batches_per_epoch = dataset_size / batch_size;
 
-  @tf.function
   def __call__(self, step):
 
-    if step <= self.decay_from_epoch * self.BATCHES_PER_EPOCH:
-      return self.initial_learning_rate;
-    if step > self.total_epoch * self.BATCHES_PER_EPOCH:
-      return 0.;
-    return (self.total_epoch * self.BATCHES_PER_EPOCH - step) / ((self.total_epoch - self.decay_from_epoch) * self.BATCHES_PER_EPOCH) * self.initial_learning_rate;
+    return tf.cond(tf.math.less_equal(step, self.decay_from_epoch * self.batches_per_epoch), \
+                   lambda: self initial_learning_rate, \
+                   lambda: tf.cond(tf.math.greater_equal(step, self.total_epoch * self.batches_per_epoch), \
+                                   lambda: 0., \
+                                   lambda: (self.total_epoch * self.batches_per_epoch - step) / \
+                                           ((self.total_epoch - self.decay_from_epoch) * self.batches_per_epoch) * \
+                                           self.initial_learning_rate));
 
 def main():
 
