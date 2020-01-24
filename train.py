@@ -16,8 +16,11 @@ def main():
   # models
   cycleGAN = CycleGAN();
   #optimizer = tf.keras.optimizers.Adam(learning_rate = tf.keras.optimizers.schedules.InverseTimeDecay(2e-4, 0.3, 1000 / batch_size), beta_1 = 0.5);
-  optimizer = tf.keras.optimizers.Adam(learning_rate = 2e-4, beta_1 = 0.5);
-  # load dataset
+  optimizer = tf.keras.optimizers.Adam(
+    tf.keras.optimizers.schedules.PiecewiseConstantDecay(
+      boundaries = [dataset_size * 100 + i * dataset_size * 100 / 4 for i in range(5)],
+      values = list(reversed([i * 2e-4 / 5 for i in range(6)]))),
+    beta_1 = 0.5);  # load dataset
   '''
   A = tf.data.TFRecordDataset(os.path.join('dataset', 'A.tfrecord')).map(parse_function_generator(img_shape)).shuffle(batch_size).batch(batch_size).__iter__();
   B = tf.data.TFRecordDataset(os.path.join('dataset', 'B.tfrecord')).map(parse_function_generator(img_shape)).shuffle(batch_size).batch(batch_size).__iter__();
@@ -36,22 +39,21 @@ def main():
   avg_da_loss = tf.keras.metrics.Mean(name = 'DA loss', dtype = tf.float32);
   avg_db_loss = tf.keras.metrics.Mean(name = 'DB loss', dtype = tf.float32);
   while True:
-    for i in range(5):
-      imageA, _ = next(A);
-      imageB, _ = next(B);
-      with tf.GradientTape(persistent = True) as tape:
-        outputs = cycleGAN((imageA, imageB));
-        G_loss = cycleGAN.G_loss(outputs);
-        DA_loss = cycleGAN.DA_loss(outputs);
-        DB_loss = cycleGAN.DB_loss(outputs);
-      # calculate discriminator gradients
-      da_grads = tape.gradient(DA_loss, cycleGAN.DA.trainable_variables);
-      db_grads = tape.gradient(DB_loss, cycleGAN.DB.trainable_variables);
-      avg_da_loss.update_state(DA_loss);
-      avg_db_loss.update_state(DB_loss);
-      # update discriminator weights
-      optimizer.apply_gradients(zip(da_grads, cycleGAN.DA.trainable_variables));
-      optimizer.apply_gradients(zip(db_grads, cycleGAN.DB.trainable_variables));
+    imageA, _ = next(A);
+    imageB, _ = next(B);
+    with tf.GradientTape(persistent = True) as tape:
+      outputs = cycleGAN((imageA, imageB));
+      G_loss = cycleGAN.G_loss(outputs);
+      DA_loss = cycleGAN.DA_loss(outputs);
+      DB_loss = cycleGAN.DB_loss(outputs);
+    # calculate discriminator gradients
+    da_grads = tape.gradient(DA_loss, cycleGAN.DA.trainable_variables);
+    db_grads = tape.gradient(DB_loss, cycleGAN.DB.trainable_variables);
+    avg_da_loss.update_state(DA_loss);
+    avg_db_loss.update_state(DB_loss);
+    # update discriminator weights
+    optimizer.apply_gradients(zip(da_grads, cycleGAN.DA.trainable_variables));
+    optimizer.apply_gradients(zip(db_grads, cycleGAN.DB.trainable_variables));
     # calculate generator gradients
     ga_grads = tape.gradient(G_loss, cycleGAN.GA.trainable_variables);
     gb_grads = tape.gradient(G_loss, cycleGAN.GB.trainable_variables);
