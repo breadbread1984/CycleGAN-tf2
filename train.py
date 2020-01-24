@@ -12,30 +12,15 @@ batch_size = 1;
 dataset_size = 1334;
 img_shape = (255,255,3);
 
-class LrSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
-
-  def __init__(self, initial_learning_rate, decay_from_epoch = 100, total_epoch = 200):
-
-    self.initial_learning_rate = tf.constant(initial_learning_rate, dtype = tf.float32);
-    self.decay_from_epoch = tf.constant(decay_from_epoch, dtype = tf.float32);
-    self.total_epoch = tf.constant(total_epoch, dtype = tf.float32);
-    self.batches_per_epoch = dataset_size / batch_size;
-
-  def __call__(self, step):
-
-    return tf.cond(tf.math.less_equal(step, self.decay_from_epoch * self.batches_per_epoch), \
-                   lambda: self.initial_learning_rate, \
-                   lambda: tf.cond(tf.math.greater_equal(step, self.total_epoch * self.batches_per_epoch), \
-                                   lambda: 0., \
-                                   lambda: (self.total_epoch * self.batches_per_epoch - step) / \
-                                           ((self.total_epoch - self.decay_from_epoch) * self.batches_per_epoch) * \
-                                           self.initial_learning_rate));
-
 def main():
 
   # models
   cycleGAN = CycleGAN();
-  optimizer = tf.keras.optimizers.Adam(LrSchedule(initial_learning_rate = 2e-4), beta_1 = 0.5);
+  optimizer = tf.keras.optimizers.Adam(
+    keras.optimizers.schedules.PiecewiseConstantDecay(
+      boundaries = [dataset_size * 100 + i * dataset_size * 100 / 4 for i in range(5)],
+      values = list(reversed([i * 2e-4 / 5 for i in range(6)]))),
+    beta_1 = 0.5);
   # load dataset
   '''
   A = tf.data.TFRecordDataset(os.path.join('dataset', 'A.tfrecord')).map(parse_function_generator(img_shape)).shuffle(batch_size).batch(batch_size).__iter__();
