@@ -9,6 +9,7 @@ from create_dataset import parse_function_generator;
 from download_dataset import parse_function;
 
 batch_size = 1;
+dataset_size = 1334;
 img_shape = (255,255,3);
 
 def main():
