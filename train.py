@@ -21,7 +21,6 @@ class LrSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
     self.total_epoch = float(total_epoch);
     self.batches_per_epoch = dataset_size / batch_size;
 
-  @tf.function
   def __call__(self, step):
 
     return tf.cond(tf.math.less_equal(step, self.decay_from_epoch * self.batches_per_epoch), \
