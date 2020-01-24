@@ -9,11 +9,12 @@ from create_dataset import parse_function_generator;
 from download_dataset import parse_function;
 
 batch_size = 1;
+dataset_size = 1334;
 img_shape = (255,255,3);
 
 class LrSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
 
-  BATCHES_PER_EPOCH = 1334 / batch_size;
+  BATCHES_PER_EPOCH = dataset_size / batch_size;
 
   def __init__(self, initial_learning_rate, decay_from_epoch = 100, total_epoch = 200):
 
@@ -21,11 +22,12 @@ class LrSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
     self.decay_from_epoch = decay_from_epoch;
     self.total_epoch = total_epoch;
 
+  @tf.function
   def __call__(self, step):
 
-    if step <= self.decay_from_epoch * self.BATCHES_PER_EPOCH:
+    if step <= float(self.decay_from_epoch * self.BATCHES_PER_EPOCH):
       return self.initial_learning_rate;
-    if self > self.total_epoch * self.BATCHES_PER_EPOCH:
+    if self > float(self.total_epoch * self.BATCHES_PER_EPOCH):
       return 0.;
     return (self.total_epoch * self.BATCHES_PER_EPOCH - step) / ((self.total_epoch - self.decay_from_epoch) * self.BATCHES_PER_EPOCH) * self.initial_learning_rate;
 
