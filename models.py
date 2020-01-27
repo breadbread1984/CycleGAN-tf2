@@ -81,7 +81,7 @@ class ImgPool(object):
     
     if len(self.pool) < self.size: self.pool.append(img);
     else: self.pool[self.nxt_pos] = img;
-    self.nxt_pos = (self.nxt_pos + 1) % len(self.size);
+    self.nxt_pos = (self.nxt_pos + 1) % self.size;
 
 class CycleGAN(tf.keras.Model):
 
