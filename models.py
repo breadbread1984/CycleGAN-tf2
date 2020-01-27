@@ -69,21 +69,13 @@ class ImgPool(object):
     
   def empty(self):
     
-    return self,nxt_pos == 0 && self.full == False;
+    return self.nxt_pos == 0 && self.full == False;
 
   def get(self):
     
     assert self.nxt_pos != 0 || self.full != False;
-    samples = tf.random.uniform_candidate_sampler(
-      true_classes = [tf.range(self.pool.size)],
-      num_true = self.pool.size(),
-      range_max = self.pool.size(),
-      num_sampled = 1, unique = False) if self.full == True else \
-      tf.random.uniform_candidate_sampler(
-      true_classes = [tf.range(self.nxt_pos)],
-      num_true = self.nxt_pos,
-      range_max = self.nxt_pos,
-      num_sampled = 1, unique = False);
+    samples = tf.random.uniform_candidate_sampler(true_classes = [tf.range(self.pool.size())], num_true = self.pool.size(), range_max = self.pool.size(), num_sampled = 1, unique = False) \
+      if self.full == True else tf.random.uniform_candidate_sampler(true_classes = [tf.range(self.nxt_pos)], num_true = self.nxt_pos, range_max = self.nxt_pos, num_sampled = 1, unique = False);
     index = samples.sampled_candidates[0];
     return self.pool.read(index);
 
