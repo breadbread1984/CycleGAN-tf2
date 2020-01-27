@@ -141,7 +141,7 @@ class CycleGAN(tf.keras.Model):
 
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
     real_loss = self.l2(1, pred_real_B);
-    fake_loss = self.l2(0, pred_fake_B) if False == self.pool_A.empty() || tf.random.uniform(()) < 0.5 else self.l2(0, self.DA(self.pool_A.get()));
+    fake_loss = self.l2(0, pred_fake_B) if self.pool_A.empty() or tf.random.uniform(()) < 0.5 else self.l2(0, self.DA(self.pool_A.get()));
     self.pool_A.push(fake_B);
     return 0.5 * (real_loss + fake_loss);
 
@@ -149,7 +149,7 @@ class CycleGAN(tf.keras.Model):
 
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
     real_loss = self.l2(1, pred_real_A);
-    fake_loss = self.l2(0, pred_fake_A) if False == self.pool_B.empty() || tf.random.uniform(()) < 0.5 else self.l2(0, self.DB(self.pool_B.get()));
+    fake_loss = self.l2(0, pred_fake_A) if self.pool_B.empty() or tf.random.uniform(()) < 0.5 else self.l2(0, self.DB(self.pool_B.get()));
     self.pool_B.push(fake_A);
     return 0.5 * (real_loss + fake_loss);
 
