@@ -90,8 +90,8 @@ class ImgPool(object):
   def push(self, img):
     
     self.pool.write(self.nxt_pos, img);
-    if self.nxt_pos == self.pool.size() - 1 and self.full == False: self.full = True;
     self.nxt_pos = (self.nxt_pos + 1) % self.pool.size();
+    if self.nxt_pos == 0 and self.full == False: self.full = True;
 
 class CycleGAN(tf.keras.Model):
 
