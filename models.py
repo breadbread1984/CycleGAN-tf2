@@ -65,20 +65,20 @@ class ImgPool(object):
     
     self.pool = tf.TensorArray(dtype = tf.float32, size = size, clear_after_read = False);
     self.nxt_pos = 0;
-    self.filled = False;
+    self.full = False;
     
   def empty(self):
     
-    return self,nxt_pos == 0 && self.filled == False;
+    return self,nxt_pos == 0 && self.full == False;
 
   def get(self):
     
-    assert self.nxt_pos != 0 || self.filled != False;
+    assert self.nxt_pos != 0 || self.full != False;
     samples = tf.random.uniform_candidate_sampler(
       true_classes = [tf.range(self.pool.size)],
       num_true = self.pool.size(),
       range_max = self.pool.size(),
-      num_sampled = 1, unique = False) if self.filled == True else \
+      num_sampled = 1, unique = False) if self.full == True else \
       tf.random.uniform_candidate_sampler(
       true_classes = [tf.range(self.nxt_pos)],
       num_true = self.nxt_pos,
@@ -90,7 +90,7 @@ class ImgPool(object):
   def push(self, img):
     
     self.pool.write(self.nxt_pos, img);
-    if self.nxt_pos == self.pool.size() - 1 and self.filled == False: self.filled = True;
+    if self.nxt_pos == self.pool.size() - 1 and self.full == False: self.full = True;
     self.nxt_pos = (self.nxt_pos + 1) % self.pool.size();
 
 class CycleGAN(tf.keras.Model):
