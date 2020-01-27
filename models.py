@@ -59,6 +59,40 @@ def Discriminator(input_filters, inner_filters, layers = 3):
   results = tf.keras.layers.Conv2D(filters = 1, kernel_size = (4,4), padding = 'same', kernel_initializer = tf.keras.initializers.RandomNormal(stddev = 0.02))(results);
   return tf.keras.Model(inputs = inputs, outputs = results);
 
+class ImgPool(object):
+
+  def __init__(self, size = 50):
+    
+    self.pool = tf.TensorArray(dtype = tf.float32, size = size, clear_after_read = False);
+    self.nxt_pos = 0;
+    self.filled = False;
+    
+  def empty(self):
+    
+    return self,nxt_pos == 0 && self.filled == False;
+
+  def get(self):
+    
+    assert self.nxt_pos != 0 || self.filled != False;
+    samples = tf.random.uniform_candidate_sampler(
+      true_classes = [tf.range(self.pool.size)],
+      num_true = self.pool.size(),
+      range_max = self.pool.size(),
+      num_sampled = 1, unique = False) if self.filled == True else \
+      tf.random.uniform_candidate_sampler(
+      true_classes = [tf.range(self.nxt_pos)],
+      num_true = self.nxt_pos,
+      range_max = self.nxt_pos,
+      num_sampled = 1, unique = False);
+    index = samples.sampled_candidates[0];
+    return self.pool.read(index);
+
+  def push(self, img):
+    
+    self.pool.write(self.nxt_pos, img);
+    if self.nxt_pos == self.pool.size() - 1 and self.filled == False: self.filled = True;
+    self.nxt_pos = (self.nxt_pos + 1) % self.pool.size();
+
 class CycleGAN(tf.keras.Model):
 
   def __init__(self, input_filters = 3, output_filters = 3, inner_filters = 64, blocks = 9, layers = 3, ** kwargs):
@@ -68,6 +102,8 @@ class CycleGAN(tf.keras.Model):
     self.GB = Generator(input_filters = output_filters, output_filters = input_filters, inner_filters = input_filters, blocks = blocks);
     self.DA = Discriminator(input_filters = output_filters, inner_filters = inner_filters, layers = layers);
     self.DB = Discriminator(input_filters = input_filters,  inner_filters = inner_filters, layers = layers);
+    self.pool_A = ImgPool(50);
+    self.pool_B = imgPool(50);
     self.l1 = tf.keras.losses.MeanAbsoluteError();
     self.l2 = tf.keras.losses.MeanSquaredError();
 
@@ -113,14 +149,16 @@ class CycleGAN(tf.keras.Model):
 
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
     real_loss = self.l2(1, pred_real_B);
-    fake_loss = self.l2(0, pred_fake_B);
+    fake_loss = self.l2(0, pred_fake_B) if False == self.pool_A.empty() || tf.random.uniform(()) < 0.5 else self.l2(0, self.DA(self.pool_A.get()));
+    self.pool_A.push(fake_B);
     return 0.5 * (real_loss + fake_loss);
 
   def DB_loss(self, inputs):
 
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
     real_loss = self.l2(1, pred_real_A);
-    fake_loss = self.l2(0, pred_fake_A);
+    fake_loss = self.l2(0, pred_fake_A) if False == self.pool_B.empty() || tf.random.uniform(()) < 0.5 else self.l2(0, self.DB(self.pool_B.get()));
+    self.pool_B.push(fake_A);
     return 0.5 * (real_loss + fake_loss);
 
 if __name__ == "__main__":
