@@ -144,6 +144,7 @@ class CycleGAN(tf.keras.Model):
     else:
       fake = self.pool_A.get();
       fake_loss = tf.math.reduce_mean(self.DA(fake));
+    self.pool_A.push(fake_B);
     r = tf.random.uniform((real_B.shape[0], 1, 1, 1), dtype = tf.float32);
     interp_B = r * real_B + (1 - r) * fake;
     with tf.GradientTape() as g:
@@ -162,6 +163,7 @@ class CycleGAN(tf.keras.Model):
     else:
       fake = self.pool_B.get();
       fake_loss = tf.math.reduce_mean(self.DB(fake));
+    self.pool_B.push(fake_A);
     r = tf.random.uniform((real_A.shape[0], 1, 1, 1), dtype = tf.float32);
     interp_A = r * real_A + (1 - r) * fake;
     with tf.GradientTape() as g:
