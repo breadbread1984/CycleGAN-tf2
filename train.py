@@ -78,7 +78,8 @@ def main():
         tf.summary.image('fake B', fake_B, step = optimizer.iterations);
         tf.summary.image('real B', real_B, step = optimizer.iterations);
         tf.summary.image('fake A', fake_A, step = optimizer.iterations);
-      print('Step #%d G Loss: %.6f DA Loss: %.6f DB Loss: %.6f' % (optimizer.iterations, avg_g_loss.result(), avg_da_loss.result(), avg_db_loss.result()));
+      print('Step #%d G Loss: %.6f DA Loss: %.6f DB Loss: %.6f lr: %.6f' % \
+            (optimizer.iterations, avg_g_loss.result(), avg_da_loss.result(), avg_db_loss.result(), optimizer._hyper['learning_rate'](optimizer.iterations)));
       avg_g_loss.reset_states();
       avg_da_loss.reset_states();
       avg_db_loss.reset_states();

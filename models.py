@@ -59,6 +59,30 @@ def Discriminator(input_filters, inner_filters, layers = 3):
   results = tf.keras.layers.Conv2D(filters = 1, kernel_size = (4,4), padding = 'same', kernel_initializer = tf.keras.initializers.RandomNormal(stddev = 0.02))(results);
   return tf.keras.Model(inputs = inputs, outputs = results);
 
+class ImgPool(object):
+
+  def __init__(self, size = 50):
+    
+    self.pool = list();
+    self.nxt_pos = 0;
+    self.size = size;
+    
+  def empty(self):
+    
+    return len(self.pool) == 0;
+
+  def get(self):
+
+    assert len(self.pool) != 0;
+    index = np.random.randint(low = 0, high = len(self.pool));
+    return self.pool[index];
+
+  def push(self, img):
+    
+    if len(self.pool) < self.size: self.pool.append(img);
+    else: self.pool[self.nxt_pos] = img;
+    self.nxt_pos = (self.nxt_pos + 1) % self.size;
+
 class CycleGAN(tf.keras.Model):
 
   def __init__(self, input_filters = 3, output_filters = 3, inner_filters = 64, blocks = 9, layers = 3, ** kwargs):
@@ -68,6 +92,8 @@ class CycleGAN(tf.keras.Model):
     self.GB = Generator(input_filters = output_filters, output_filters = input_filters, inner_filters = input_filters, blocks = blocks);
     self.DA = Discriminator(input_filters = output_filters, inner_filters = inner_filters, layers = layers);
     self.DB = Discriminator(input_filters = input_filters,  inner_filters = inner_filters, layers = layers);
+    self.pool_A = ImgPool(50);
+    self.pool_B = ImgPool(50);
     self.l1 = tf.keras.losses.MeanAbsoluteError();
 
   def call(self, inputs):
@@ -112,9 +138,14 @@ class CycleGAN(tf.keras.Model):
 
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
     real_loss = tf.math.reduce_mean(pred_real_B);
-    fake_loss = tf.math.reduce_mean(pred_fake_B);
+    if self.pool_A.empty() or tf.random.uniform(()) < 0.5:
+      fake = fake_B;
+      fake_loss = tf.math.reduce_mean(pred_fake_B);
+    else:
+      fake = self.pool_A.get();
+      fake_loss = tf.math.reduce_mean(self.DA(fake));
     r = tf.random.uniform((real_B.shape[0], 1, 1, 1), dtype = tf.float32);
-    interp_B = r * real_B + (1 - r) * fake_B;
+    interp_B = r * real_B + (1 - r) * fake;
     with tf.GradientTape() as g:
       g.watch(interp_B);
       pred_interp_B = self.DA(interp_B);
@@ -125,9 +156,14 @@ class CycleGAN(tf.keras.Model):
 
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
     real_loss = tf.math.reduce_mean(pred_real_A);
-    fake_loss = tf.math.reduce_mean(pred_fake_A);
+    if self.pool_B.empty() or tf.random.uniform(()) < 0.5:
+      fake = fake_B;
+      fake_loss = tf.math.reduce_mean(pred_fake_A);
+    else:
+      fake = self.pool_B.get();
+      fake_loss = tf.math.reduce_mean(self.DB(fake));
     r = tf.random.uniform((real_A.shape[0], 1, 1, 1), dtype = tf.float32);
-    interp_A = r * real_A + (1 - r) * fake_A;
+    interp_A = r * real_A + (1 - r) * fake;
     with tf.GradientTape() as g:
       g.watch(interp_A);
       pred_interp_A = self.DB(interp_A);
