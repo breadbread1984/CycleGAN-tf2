@@ -95,7 +95,7 @@ class CycleGAN(tf.keras.Model):
     self.DA = Discriminator(input_filters = output_filters, inner_filters = inner_filters, layers = layers);
     self.DB = Discriminator(input_filters = input_filters,  inner_filters = inner_filters, layers = layers);
     self.pool_A = ImgPool(50);
-    self.pool_B = imgPool(50);
+    self.pool_B = ImgPool(50);
     self.l1 = tf.keras.losses.MeanAbsoluteError();
     self.l2 = tf.keras.losses.MeanSquaredError();
 
