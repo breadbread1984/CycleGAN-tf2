@@ -7,26 +7,10 @@ from models import CycleGAN;
 def save_model():
 
   cycleGAN = CycleGAN();
-  optimizerGA = tf.keras.optimizers.Adam(
-    tf.keras.optimizers.schedules.PiecewiseConstantDecay(
-      boundaries = [dataset_size * 100 + i * dataset_size * 100 / 4 for i in range(5)],
-      values = list(reversed([i * 2e-4 / 5 for i in range(6)]))),
-    beta_1 = 0.5);
-  optimizerGB = tf.keras.optimizers.Adam(
-    tf.keras.optimizers.schedules.PiecewiseConstantDecay(
-      boundaries = [dataset_size * 100 + i * dataset_size * 100 / 4 for i in range(5)],
-      values = list(reversed([i * 2e-4 / 5 for i in range(6)]))),
-    beta_1 = 0.5);
-  optimizerDA = tf.keras.optimizers.Adam(
-    tf.keras.optimizers.schedules.PiecewiseConstantDecay(
-      boundaries = [dataset_size * 100 + i * dataset_size * 100 / 4 for i in range(5)],
-      values = list(reversed([i * 2e-4 / 5 for i in range(6)]))),
-    beta_1 = 0.5);
-  optimizerDB = tf.keras.optimizers.Adam(
-    tf.keras.optimizers.schedules.PiecewiseConstantDecay(
-      boundaries = [dataset_size * 100 + i * dataset_size * 100 / 4 for i in range(5)],
-      values = list(reversed([i * 2e-4 / 5 for i in range(6)]))),
-    beta_1 = 0.5);
+  optimizerGA = tf.keras.optimizers.Adam(2e-4);
+  optimizerGB = tf.keras.optimizers.Adam(2e-4);
+  optimizerDA = tf.keras.optimizers.Adam(2e-4);
+  optimizerDB = tf.keras.optimizers.Adam(2e-4);
   checkpoint = tf.train.Checkpoint(GA = cycleGAN.GA, GB = cycleGAN.GB, DA = cycleGAN.DA, DB = cycleGAN.DB, 
                                    optimizerGA = optimizerGA, optimizerGB = optimizerGB, optimizerDA = optimizerDA, optimizerDB = optimizerDB);
   checkpoint.restore(tf.train.latest_checkpoint('checkpoints'));
