@@ -42,10 +42,10 @@ def main():
   A = tf.data.TFRecordDataset(os.path.join('dataset', 'A.tfrecord')).map(parse_function_generator(img_shape)).shuffle(batch_size).batch(batch_size).__iter__();
   B = tf.data.TFRecordDataset(os.path.join('dataset', 'B.tfrecord')).map(parse_function_generator(img_shape)).shuffle(batch_size).batch(batch_size).__iter__();
   '''
-  A = tfds.load(name = 'cycle_gan/horse2zebra', split = "trainA", download = False).repeat(-1).map(parse_function_generator()).shuffle(batch_size).batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE).__iter__();
-  B = tfds.load(name = 'cycle_gan/horse2zebra', split = "trainB", download = False).repeat(-1).map(parse_function_generator()).shuffle(batch_size).batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE).__iter__();
-  testA = tfds.load(name = 'cycle_gan/horse2zebra', split = 'testA', download = False).repeat(-1).map(parse_function_generator(isTrain = False)).batch(1).__iter__();
-  testB = tfds.load(name = 'cycle_gan/horse2zebra', split = 'testB', download = False).repeat(-1).map(parse_function_generator(isTrain = False)).batch(1).__iter__();
+  A = iter(tfds.load(name = 'cycle_gan/horse2zebra', split = "trainA", download = False).repeat(-1).map(parse_function_generator()).shuffle(batch_size).batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE));
+  B = iter(tfds.load(name = 'cycle_gan/horse2zebra', split = "trainB", download = False).repeat(-1).map(parse_function_generator()).shuffle(batch_size).batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE));
+  testA = iter(tfds.load(name = 'cycle_gan/horse2zebra', split = 'testA', download = False).repeat(-1).map(parse_function_generator(isTrain = False)).batch(1));
+  testB = iter(tfds.load(name = 'cycle_gan/horse2zebra', split = 'testB', download = False).repeat(-1).map(parse_function_generator(isTrain = False)).batch(1));
   # restore from existing checkpoint
   checkpoint = tf.train.Checkpoint(GA = cycleGAN.GA, GB = cycleGAN.GB, DA = cycleGAN.DA, DB = cycleGAN.DB, 
                                    optimizerGA = optimizerGA, optimizerGB = optimizerGB, optimizerDA = optimizerDA, optimizerDB = optimizerDB);
