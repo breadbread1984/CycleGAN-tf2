@@ -3,10 +3,18 @@
 import tensorflow as tf;
 import tensorflow_datasets as tfds;
 
-def parse_function(feature):
+def parse_function_generator(image_shape = (256,256,3), isTrain = True)
+  def parse_function(feature):
 
-  data = tf.cast(feature['image'], dtype = tf.float32) / 255.;
-  return data, feature['label'];
+    if isTraint == True:
+      # augmentation
+      data = tf.image.resize(data, [image_shape[0] + 30,image_shape[1] + 30], method = tf.image.ResizeMethod.NEAREST_NEIGHBOR);
+      data = tf.image.random_crop(data, size = image_shape);
+      data = tf.image.random_flip_left_right(data);
+    # normalize
+    data = tf.cast(image, tf.float32) / 127.5 - 1;
+    return data, feature['label'];
+  return parse_function;
 
 def download():
 

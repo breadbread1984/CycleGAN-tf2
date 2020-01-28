@@ -6,7 +6,7 @@ import tensorflow as tf;
 import tensorflow_datasets as tfds;
 from models import CycleGAN;
 from create_dataset import parse_function_generator;
-from download_dataset import parse_function;
+from download_dataset import parse_function_generator;
 
 batch_size = 1;
 dataset_size = 1334;
@@ -16,27 +16,45 @@ def main():
 
   # models
   cycleGAN = CycleGAN();
-  optimizer = tf.keras.optimizers.Adam(
+  optimizerGA = tf.keras.optimizers.Adam(
     tf.keras.optimizers.schedules.PiecewiseConstantDecay(
       boundaries = [dataset_size * 100 + i * dataset_size * 100 / 4 for i in range(5)],
       values = list(reversed([i * 2e-4 / 5 for i in range(6)]))),
     beta_1 = 0.5);
+  optimizerGB = tf.keras.optimizers.Adam(
+    tf.keras.optimizers.schedules.PiecewiseConstantDecay(
+      boundaries = [dataset_size * 100 + i * dataset_size * 100 / 4 for i in range(5)],
+      values = list(reversed([i * 2e-4 / 5 for i in range(6)]))),
+    beta_1 = 0.5);
+  optimizerDA = tf.keras.optimizers.Adam(
+    tf.keras.optimizers.schedules.PiecewiseConstantDecay(
+      boundaries = [dataset_size * 100 + i * dataset_size * 100 / 4 for i in range(5)],
+      values = list(reversed([i * 2e-4 / 5 for i in range(6)]))),
+    beta_1 = 0.5);
+  optimizerDB = tf.keras.optimizers.Adam(
+    tf.keras.optimizers.schedules.PiecewiseConstantDecay(
+      boundaries = [dataset_size * 100 + i * dataset_size * 100 / 4 for i in range(5)],
+      values = list(reversed([i * 2e-4 / 5 for i in range(6)]))),
+    beta_1 = 0.5);
+  
   # load dataset
   '''
   A = tf.data.TFRecordDataset(os.path.join('dataset', 'A.tfrecord')).map(parse_function_generator(img_shape)).shuffle(batch_size).batch(batch_size).__iter__();
   B = tf.data.TFRecordDataset(os.path.join('dataset', 'B.tfrecord')).map(parse_function_generator(img_shape)).shuffle(batch_size).batch(batch_size).__iter__();
   '''
-  A = tfds.load(name = 'cycle_gan/horse2zebra', split = "trainA", download = False).repeat(-1).map(parse_function).shuffle(batch_size).batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE).__iter__();
-  B = tfds.load(name = 'cycle_gan/horse2zebra', split = "trainB", download = False).repeat(-1).map(parse_function).shuffle(batch_size).batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE).__iter__();
-  testA = tfds.load(name = 'cycle_gan/horse2zebra', split = 'testA', download = False).repeat(-1).map(parse_function).batch(1).__iter__();
-  testB = tfds.load(name = 'cycle_gan/horse2zebra', split = 'testB', download = False).repeat(-1).map(parse_function).batch(1).__iter__();
+  A = tfds.load(name = 'cycle_gan/horse2zebra', split = "trainA", download = False).repeat(-1).map(parse_function_generator()).shuffle(batch_size).batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE).__iter__();
+  B = tfds.load(name = 'cycle_gan/horse2zebra', split = "trainB", download = False).repeat(-1).map(parse_function_generator()).shuffle(batch_size).batch(batch_size).prefetch(tf.data.experimental.AUTOTUNE).__iter__();
+  testA = tfds.load(name = 'cycle_gan/horse2zebra', split = 'testA', download = False).repeat(-1).map(parse_function_generator(isTrain = False)).batch(1).__iter__();
+  testB = tfds.load(name = 'cycle_gan/horse2zebra', split = 'testB', download = False).repeat(-1).map(parse_function_generator(isTrain = False)).batch(1).__iter__();
   # restore from existing checkpoint
-  checkpoint = tf.train.Checkpoint(model = cycleGAN, optimizer = optimizer, optimizer_step = optimizer.iterations);
+  checkpoint = tf.train.Checkpoint(GA = cycleGAN.GA, GB = cycleGAN.GB, DA = cycleGAN.DA, DB = cycleGAN.DB, 
+                                   optimizerGA = optimizerGA, optimizerGB = optimizerGB, optimizerDA = optimizerDA, optimizerDB = optimizerDB);
   checkpoint.restore(tf.train.latest_checkpoint('checkpoints'));
   # create log
   log = tf.summary.create_file_writer('checkpoints');
   # train model
-  avg_g_loss = tf.keras.metrics.Mean(name = 'G loss', dtype = tf.float32);
+  avg_ga_loss = tf.keras.metrics.Mean(name = 'GA loss', dtype = tf.float32);
+  avg_gb_loss = tf.keras.metrics.Mean(name = 'GB loss', dtype = tf.float32);
   avg_da_loss = tf.keras.metrics.Mean(name = 'DA loss', dtype = tf.float32);
   avg_db_loss = tf.keras.metrics.Mean(name = 'DB loss', dtype = tf.float32);
   while True:
@@ -44,7 +62,8 @@ def main():
     imageB, _ = next(B);
     with tf.GradientTape(persistent = True) as tape:
       outputs = cycleGAN((imageA, imageB));
-      G_loss = cycleGAN.G_loss(outputs);
+      GA_loss = cycleGAN.GA_loss(outputs);
+      GB_loss = cycleGAN.GB_loss(outputs);
       DA_loss = cycleGAN.DA_loss(outputs);
       DB_loss = cycleGAN.DB_loss(outputs);
     # calculate discriminator gradients
@@ -53,34 +72,37 @@ def main():
     avg_da_loss.update_state(DA_loss);
     avg_db_loss.update_state(DB_loss);
     # update discriminator weights
-    optimizer.apply_gradients(zip(da_grads, cycleGAN.DA.trainable_variables));
-    optimizer.apply_gradients(zip(db_grads, cycleGAN.DB.trainable_variables));
+    optimizerDA.apply_gradients(zip(da_grads, cycleGAN.DA.trainable_variables));
+    optimizerDB.apply_gradients(zip(db_grads, cycleGAN.DB.trainable_variables));
     # calculate generator gradients
-    ga_grads = tape.gradient(G_loss, cycleGAN.GA.trainable_variables);
-    gb_grads = tape.gradient(G_loss, cycleGAN.GB.trainable_variables);
-    avg_g_loss.update_state(G_loss);
+    ga_grads = tape.gradient(GA_loss, cycleGAN.GA.trainable_variables);
+    gb_grads = tape.gradient(GB_loss, cycleGAN.GB.trainable_variables);
+    avg_ga_loss.update_state(GA_loss);
+    avg_gb_loss.update_state(GB_loss);
     # update generator weights
-    optimizer.apply_gradients(zip(ga_grads, cycleGAN.GA.trainable_variables));
-    optimizer.apply_gradients(zip(gb_grads, cycleGAN.GB.trainable_variables));
+    optimizerGA.apply_gradients(zip(ga_grads, cycleGAN.GA.trainable_variables));
+    optimizerGB.apply_gradients(zip(gb_grads, cycleGAN.GB.trainable_variables));
     if tf.equal(optimizer.iterations % 500, 0):
       imageA, _ = next(testA);
       imageB, _ = next(testB);
       outputs = cycleGAN((imageA, imageB));
-      real_A = tf.cast(tf.clip_by_value(imageA * 255., clip_value_min = 0., clip_value_max = 255.), dtype = tf.uint8);
-      real_B = tf.cast(tf.clip_by_value(imageB * 255., clip_value_min = 0., clip_value_max = 255.), dtype = tf.uint8);
-      fake_B = tf.cast(tf.clip_by_value(outputs[1] * 255., clip_value_min = 0., clip_value_max = 255.), dtype = tf.uint8);
-      fake_A = tf.cast(tf.clip_by_value(outputs[7] * 255., clip_value_min = 0., clip_value_max = 255.), dtype = tf.uint8);
+      real_A = tf.cast(tf.clip_by_value((imageA + 1) * 127.5, clip_value_min = 0., clip_value_max = 255.), dtype = tf.uint8);
+      real_B = tf.cast(tf.clip_by_value((imageB + 1) * 127.5., clip_value_min = 0., clip_value_max = 255.), dtype = tf.uint8);
+      fake_B = tf.cast(tf.clip_by_value((outputs[1] + 1) * 127.5, clip_value_min = 0., clip_value_max = 255.), dtype = tf.uint8);
+      fake_A = tf.cast(tf.clip_by_value((outputs[7] + 1) * 127.5, clip_value_min = 0., clip_value_max = 255.), dtype = tf.uint8);
       with log.as_default():
-        tf.summary.scalar('generator loss', avg_g_loss.result(), step = optimizer.iterations);
+        tf.summary.scalar('generator A loss', avg_ga_loss.result(), step = optimizer.iterations);
+        tf.summary.scalar('generator B loss', avg_gb_loss.result(), step = optimizer.iterations);
         tf.summary.scalar('discriminator A loss', avg_da_loss.result(), step = optimizer.iterations);
         tf.summary.scalar('discriminator B loss', avg_db_loss.result(), step = optimizer.iterations);
         tf.summary.image('real A', real_A, step = optimizer.iterations);
         tf.summary.image('fake B', fake_B, step = optimizer.iterations);
         tf.summary.image('real B', real_B, step = optimizer.iterations);
         tf.summary.image('fake A', fake_A, step = optimizer.iterations);
-      print('Step #%d G Loss: %.6f DA Loss: %.6f DB Loss: %.6f lr: %.6f' % \
-            (optimizer.iterations, avg_g_loss.result(), avg_da_loss.result(), avg_db_loss.result(), optimizer._hyper['learning_rate'](optimizer.iterations)));
-      avg_g_loss.reset_states();
+      print('Step #%d GA Loss: %.6f GB Loss: %.6f DA Loss: %.6f DB Loss: %.6f lr: %.6f' % \
+            (optimizer.iterations, avg_ga_loss.result(), avg_gb_loss.result(), avg_da_loss.result(), avg_db_loss.result(), optimizer._hyper['learning_rate'](optimizer.iterations)));
+      avg_ga_loss.reset_states();
+      avg_gb_loss.reset_states();
       avg_da_loss.reset_states();
       avg_db_loss.reset_states();
     if tf.equal(optimizer.iterations % 10000, 0):

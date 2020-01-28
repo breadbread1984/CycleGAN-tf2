@@ -95,7 +95,7 @@ class CycleGAN(tf.keras.Model):
     self.pool_A = ImgPool(50);
     self.pool_B = ImgPool(50);
     self.l1 = tf.keras.losses.MeanAbsoluteError();
-    self.l2 = tf.keras.losses.MeanSquaredError();
+    self.bce = tf.keras.losses.BinaryCrossentropy(from_logits = True);
 
   def call(self, inputs):
 
@@ -120,34 +120,45 @@ class CycleGAN(tf.keras.Model):
     
     return (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B);
 
-  def G_loss(self, inputs):
+  def GA_loss(self, inputs):
     
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
     # wgan gradient penalty
-    loss_adv_A = self.l2(1, pred_fake_B);
-    loss_adv_B = self.l2(1, pred_fake_A);
+    loss_adv_A = self.bce(1, pred_fake_B);
     # generated image should not deviate too much from origin image
     loss_idt_A = self.l1(real_A, idt_A);
+    # reconstruction loss
+    loss_cycle_A = self.l1(real_A, rec_A);
+    loss_cycle_B = self.l1(real_B, rec_B);
+    
+    return 5 * loss_idt_A + loss_adv_A + 10 * (loss_cycle_A + loss_cycle_B);
+
+  def GB_loss(self, inputs):
+      
+    (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
+    # wgan gradient penalty
+    loss_adv_B = self.bce(1, pred_fake_A);
+    # generated image should not deviate too much from origin image
     loss_idt_B = self.l1(real_B, idt_B);
     # reconstruction loss
     loss_cycle_A = self.l1(real_A, rec_A);
     loss_cycle_B = self.l1(real_B, rec_B);
     
-    return 5 * (loss_idt_A + loss_idt_B) + (loss_adv_A + loss_adv_B) + 10 * (loss_cycle_A + loss_cycle_B);
-
+    return 5 * loss_idt_B + loss_adv_B + 10 * (loss_cycle_A + loss_cycle_B);    
+ 
   def DA_loss(self, inputs):
 
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
-    real_loss = self.l2(1, pred_real_B);
-    fake_loss = self.l2(0, pred_fake_B) if self.pool_A.empty() or tf.random.uniform(()) < 0.5 else self.l2(0, self.DA(self.pool_A.get()));
+    real_loss = self.bce(1, pred_real_B);
+    fake_loss = self.bce(0, pred_fake_B) if self.pool_A.empty() or tf.random.uniform(()) < 0.5 else self.bce(0, self.DA(self.pool_A.get()));
     self.pool_A.push(fake_B);
     return 0.5 * (real_loss + fake_loss);
 
   def DB_loss(self, inputs):
 
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
-    real_loss = self.l2(1, pred_real_A);
-    fake_loss = self.l2(0, pred_fake_A) if self.pool_B.empty() or tf.random.uniform(()) < 0.5 else self.l2(0, self.DB(self.pool_B.get()));
+    real_loss = self.bce(1, pred_real_A);
+    fake_loss = self.bce(0, pred_fake_A) if self.pool_B.empty() or tf.random.uniform(()) < 0.5 else self.bce(0, self.DB(self.pool_B.get()));
     self.pool_B.push(fake_A);
     return 0.5 * (real_loss + fake_loss);
 
