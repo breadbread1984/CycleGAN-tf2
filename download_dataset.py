@@ -12,7 +12,7 @@ def parse_function_generator(isTrain = True):
       data = tf.image.random_crop(data, size = tf.shape(feature['image'])[-3:]);
       data = tf.image.random_flip_left_right(data);
     # normalize
-    data = tf.cast(data, dtype = tf.float32) / 127.5 - 1.;
+    data = tf.math.subtract(tf.math.divide(tf.cast(data, dtype = tf.float32), 127.5), 1.);
     return data, feature['label'];
   return parse_function;
 
