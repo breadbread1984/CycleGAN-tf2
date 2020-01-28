@@ -137,7 +137,7 @@ class CycleGAN(tf.keras.Model):
       
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
     # wgan gradient penalty
-    loss_adv_B = self.bce(1, pred_fake_A);
+    loss_adv_B = self.bce(tf.ones_like(pred_fake_A), pred_fake_A);
     # generated image should not deviate too much from origin image
     loss_idt_B = self.l1(real_B, idt_B);
     # reconstruction loss
