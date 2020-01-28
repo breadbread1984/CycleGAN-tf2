@@ -124,7 +124,7 @@ class CycleGAN(tf.keras.Model):
     
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
     # wgan gradient penalty
-    loss_adv_A = self.bce(1, pred_fake_B);
+    loss_adv_A = self.bce(tf.ones_like(pred_fake_B), pred_fake_B);
     # generated image should not deviate too much from origin image
     loss_idt_A = self.l1(real_A, idt_A);
     # reconstruction loss
@@ -149,16 +149,16 @@ class CycleGAN(tf.keras.Model):
   def DA_loss(self, inputs):
 
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
-    real_loss = self.bce(1, pred_real_B);
-    fake_loss = self.bce(0, pred_fake_B) if self.pool_A.empty() or tf.random.uniform(()) < 0.5 else self.bce(0, self.DA(self.pool_A.get()));
+    real_loss = self.bce(tf.ones_like(pred_real_B), pred_real_B);
+    fake_loss = self.bce(tf.zeros_like(pred_fake_B), pred_fake_B) if self.pool_A.empty() or tf.random.uniform(()) < 0.5 else self.bce(tf.zeros_like(pred_fake_B), self.DA(self.pool_A.get()));
     self.pool_A.push(fake_B);
     return 0.5 * (real_loss + fake_loss);
 
   def DB_loss(self, inputs):
 
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
-    real_loss = self.bce(1, pred_real_A);
-    fake_loss = self.bce(0, pred_fake_A) if self.pool_B.empty() or tf.random.uniform(()) < 0.5 else self.bce(0, self.DB(self.pool_B.get()));
+    real_loss = self.bce(tf.ones_like(pred_real_A), pred_real_A);
+    fake_loss = self.bce(tf.zeros_like(pred_fake_A), pred_fake_A) if self.pool_B.empty() or tf.random.uniform(()) < 0.5 else self.bce(tf.zeros_like(pred_fake_A), self.DB(self.pool_B.get()));
     self.pool_B.push(fake_A);
     return 0.5 * (real_loss + fake_loss);
 
