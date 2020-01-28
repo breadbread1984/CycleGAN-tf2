@@ -108,7 +108,7 @@ def main():
     if tf.equal(optimizerGA.iterations % 10000, 0):
       # save model
       checkpoint.save(os.path.join('checkpoints', 'ckpt'));
-    if G_loss < 0.01 and DA_loss < 0.01 and DB_loss < 0.01: break;
+    if GA_loss < 0.01 and GB_loss < 0.01 and DA_loss < 0.01 and DB_loss < 0.01: break;
   # save the network structure with weights
   if False == os.path.exists('models'): os.mkdir('models');
   cycleGAN.GA.save(os.path.join('models', 'GA.h5'));
