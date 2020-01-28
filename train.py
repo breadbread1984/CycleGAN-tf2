@@ -82,7 +82,7 @@ def main():
     # update generator weights
     optimizerGA.apply_gradients(zip(ga_grads, cycleGAN.GA.trainable_variables));
     optimizerGB.apply_gradients(zip(gb_grads, cycleGAN.GB.trainable_variables));
-    if tf.equal(optimizer.iterations % 500, 0):
+    if tf.equal(optimizerGA.iterations % 500, 0):
       imageA, _ = next(testA);
       imageB, _ = next(testB);
       outputs = cycleGAN((imageA, imageB));
@@ -91,21 +91,21 @@ def main():
       fake_B = tf.cast(tf.clip_by_value((outputs[1] + 1) * 127.5, clip_value_min = 0., clip_value_max = 255.), dtype = tf.uint8);
       fake_A = tf.cast(tf.clip_by_value((outputs[7] + 1) * 127.5, clip_value_min = 0., clip_value_max = 255.), dtype = tf.uint8);
       with log.as_default():
-        tf.summary.scalar('generator A loss', avg_ga_loss.result(), step = optimizer.iterations);
-        tf.summary.scalar('generator B loss', avg_gb_loss.result(), step = optimizer.iterations);
-        tf.summary.scalar('discriminator A loss', avg_da_loss.result(), step = optimizer.iterations);
-        tf.summary.scalar('discriminator B loss', avg_db_loss.result(), step = optimizer.iterations);
-        tf.summary.image('real A', real_A, step = optimizer.iterations);
-        tf.summary.image('fake B', fake_B, step = optimizer.iterations);
-        tf.summary.image('real B', real_B, step = optimizer.iterations);
-        tf.summary.image('fake A', fake_A, step = optimizer.iterations);
+        tf.summary.scalar('generator A loss', avg_ga_loss.result(), step = optimizerGA.iterations);
+        tf.summary.scalar('generator B loss', avg_gb_loss.result(), step = optimizerGA.iterations);
+        tf.summary.scalar('discriminator A loss', avg_da_loss.result(), step = optimizerGA.iterations);
+        tf.summary.scalar('discriminator B loss', avg_db_loss.result(), step = optimizerGA.iterations);
+        tf.summary.image('real A', real_A, step = optimizerGA.iterations);
+        tf.summary.image('fake B', fake_B, step = optimizerGA.iterations);
+        tf.summary.image('real B', real_B, step = optimizerGA.iterations);
+        tf.summary.image('fake A', fake_A, step = optimizerGA.iterations);
       print('Step #%d GA Loss: %.6f GB Loss: %.6f DA Loss: %.6f DB Loss: %.6f lr: %.6f' % \
-            (optimizer.iterations, avg_ga_loss.result(), avg_gb_loss.result(), avg_da_loss.result(), avg_db_loss.result(), optimizer._hyper['learning_rate'](optimizer.iterations)));
+            (optimizerGA.iterations, avg_ga_loss.result(), avg_gb_loss.result(), avg_da_loss.result(), avg_db_loss.result(), optimizerGA._hyper['learning_rate'](optimizerGA.iterations)));
       avg_ga_loss.reset_states();
       avg_gb_loss.reset_states();
       avg_da_loss.reset_states();
       avg_db_loss.reset_states();
-    if tf.equal(optimizer.iterations % 10000, 0):
+    if tf.equal(optimizerGA.iterations % 10000, 0):
       # save model
       checkpoint.save(os.path.join('checkpoints', 'ckpt'));
     if G_loss < 0.01 and DA_loss < 0.01 and DB_loss < 0.01: break;
