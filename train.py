@@ -67,18 +67,14 @@ def main():
       DA_loss = cycleGAN.DA_loss(outputs);
       DB_loss = cycleGAN.DB_loss(outputs);
     # calculate discriminator gradients
-    da_grads = tape.gradient(DA_loss, cycleGAN.DA.trainable_variables);
-    db_grads = tape.gradient(DB_loss, cycleGAN.DB.trainable_variables);
-    avg_da_loss.update_state(DA_loss);
-    avg_db_loss.update_state(DB_loss);
+    da_grads = tape.gradient(DA_loss, cycleGAN.DA.trainable_variables); avg_da_loss.update_state(DA_loss);
+    db_grads = tape.gradient(DB_loss, cycleGAN.DB.trainable_variables); avg_db_loss.update_state(DB_loss);
+    # calculate generator gradients
+    ga_grads = tape.gradient(GA_loss, cycleGAN.GA.trainable_variables); avg_ga_loss.update_state(GA_loss);
+    gb_grads = tape.gradient(GB_loss, cycleGAN.GB.trainable_variables); avg_gb_loss.update_state(GB_loss);
     # update discriminator weights
     optimizerDA.apply_gradients(zip(da_grads, cycleGAN.DA.trainable_variables));
     optimizerDB.apply_gradients(zip(db_grads, cycleGAN.DB.trainable_variables));
-    # calculate generator gradients
-    ga_grads = tape.gradient(GA_loss, cycleGAN.GA.trainable_variables);
-    gb_grads = tape.gradient(GB_loss, cycleGAN.GB.trainable_variables);
-    avg_ga_loss.update_state(GA_loss);
-    avg_gb_loss.update_state(GB_loss);
     # update generator weights
     optimizerGA.apply_gradients(zip(ga_grads, cycleGAN.GA.trainable_variables));
     optimizerGB.apply_gradients(zip(gb_grads, cycleGAN.GB.trainable_variables));
@@ -92,15 +88,16 @@ def main():
       fake_A = tf.cast(tf.clip_by_value((outputs[7] + 1) * 127.5, clip_value_min = 0., clip_value_max = 255.), dtype = tf.uint8);
       with log.as_default():
         tf.summary.scalar('generator A loss', avg_ga_loss.result(), step = optimizerGA.iterations);
-        tf.summary.scalar('generator B loss', avg_gb_loss.result(), step = optimizerGA.iterations);
-        tf.summary.scalar('discriminator A loss', avg_da_loss.result(), step = optimizerGA.iterations);
-        tf.summary.scalar('discriminator B loss', avg_db_loss.result(), step = optimizerGA.iterations);
+        tf.summary.scalar('generator B loss', avg_gb_loss.result(), step = optimizerGB.iterations);
+        tf.summary.scalar('discriminator A loss', avg_da_loss.result(), step = optimizerDA.iterations);
+        tf.summary.scalar('discriminator B loss', avg_db_loss.result(), step = optimizerDB.iterations);
         tf.summary.image('real A', real_A, step = optimizerGA.iterations);
         tf.summary.image('fake B', fake_B, step = optimizerGA.iterations);
         tf.summary.image('real B', real_B, step = optimizerGA.iterations);
         tf.summary.image('fake A', fake_A, step = optimizerGA.iterations);
       print('Step #%d GA Loss: %.6f GB Loss: %.6f DA Loss: %.6f DB Loss: %.6f lr: %.6f' % \
-            (optimizerGA.iterations, avg_ga_loss.result(), avg_gb_loss.result(), avg_da_loss.result(), avg_db_loss.result(), optimizerGA._hyper['learning_rate'](optimizerGA.iterations)));
+            (optimizerGA.iterations, avg_ga_loss.result(), avg_gb_loss.result(), avg_da_loss.result(), avg_db_loss.result(), \
+            optimizerGA._hyper['learning_rate'](optimizerGA.iterations)));
       avg_ga_loss.reset_states();
       avg_gb_loss.reset_states();
       avg_da_loss.reset_states();
