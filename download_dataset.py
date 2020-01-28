@@ -9,7 +9,7 @@ def parse_function_generator(isTrain = True):
     if isTrain == True:
       # augmentation
       data = tf.image.resize(data, [tf.shape(data)[-3] + 30, tf.shape(data)[-2] + 30], method = tf.image.ResizeMethod.NEAREST_NEIGHBOR);
-      data = tf.image.random_crop(data, size = tf.shape(data)[-3:]);
+      data = tf.image.random_crop(data, size = tf.shape(feature['image'])[-3:]);
       data = tf.image.random_flip_left_right(data);
     # normalize
     data = tf.math.subtract(tf.math.divide(tf.cast(data, dtype = tf.float32), 127.5), 1.);
