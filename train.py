@@ -87,7 +87,7 @@ def main():
       imageB, _ = next(testB);
       outputs = cycleGAN((imageA, imageB));
       real_A = tf.cast(tf.clip_by_value((imageA + 1) * 127.5, clip_value_min = 0., clip_value_max = 255.), dtype = tf.uint8);
-      real_B = tf.cast(tf.clip_by_value((imageB + 1) * 127.5., clip_value_min = 0., clip_value_max = 255.), dtype = tf.uint8);
+      real_B = tf.cast(tf.clip_by_value((imageB + 1) * 127.5, clip_value_min = 0., clip_value_max = 255.), dtype = tf.uint8);
       fake_B = tf.cast(tf.clip_by_value((outputs[1] + 1) * 127.5, clip_value_min = 0., clip_value_max = 255.), dtype = tf.uint8);
       fake_A = tf.cast(tf.clip_by_value((outputs[7] + 1) * 127.5, clip_value_min = 0., clip_value_max = 255.), dtype = tf.uint8);
       with log.as_default():
