@@ -4,7 +4,7 @@ import tensorflow as tf;
 import tensorflow_datasets as tfds;
 
 def parse_function_generator(isTrain = True):
-  def train_parse_function(feature):
+  def parse_function(feature):
     data = feature['image'];
     if isTrain == True:
       # augmentation
