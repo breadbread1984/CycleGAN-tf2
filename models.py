@@ -91,7 +91,7 @@ class CycleGAN(tf.keras.Model):
     self.pool_A = ImgPool(50);
     self.pool_B = ImgPool(50);
     self.l1 = tf.keras.losses.MeanAbsoluteError();
-    self.bce = tf.keras.losses.BinaryCrossentropy(from_logits = True);
+    self.l2 = tf.keras.losses.MeanSquaredError();
 
   def call(self, inputs):
 
@@ -120,7 +120,7 @@ class CycleGAN(tf.keras.Model):
     
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
     # wgan gradient penalty
-    loss_adv_A = self.bce(tf.ones_like(pred_fake_B), pred_fake_B);
+    loss_adv_A = self.l2(tf.ones_like(pred_fake_B), pred_fake_B);
     # generated image should not deviate too much from origin image
     loss_idt_A = self.l1(real_A, idt_A);
     # reconstruction loss
@@ -133,7 +133,7 @@ class CycleGAN(tf.keras.Model):
       
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
     # wgan gradient penalty
-    loss_adv_B = self.bce(tf.ones_like(pred_fake_A), pred_fake_A);
+    loss_adv_B = self.l2(tf.ones_like(pred_fake_A), pred_fake_A);
     # generated image should not deviate too much from origin image
     loss_idt_B = self.l1(real_B, idt_B);
     # reconstruction loss
@@ -145,15 +145,15 @@ class CycleGAN(tf.keras.Model):
   def DA_loss(self, inputs):
 
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
-    real_loss = self.bce(tf.ones_like(pred_real_B), pred_real_B);
-    fake_loss = self.bce(tf.zeros_like(pred_fake_B), self.DA(self.pool_A.pick(fake_B)));
+    real_loss = self.l2(tf.ones_like(pred_real_B), pred_real_B);
+    fake_loss = self.l2(tf.zeros_like(pred_fake_B), self.DA(self.pool_A.pick(fake_B)));
     return 0.5 * (real_loss + fake_loss);
 
   def DB_loss(self, inputs):
 
     (real_A, fake_B, idt_B, pred_fake_B, pred_real_B, rec_A, real_B, fake_A, idt_A, pred_fake_A, pred_real_A, rec_B) = inputs;
-    real_loss = self.bce(tf.ones_like(pred_real_A), pred_real_A);
-    fake_loss = self.bce(tf.zeros_like(pred_fake_A), self.DB(self.pool_B.pick(fake_A)));
+    real_loss = self.l2(tf.ones_like(pred_real_A), pred_real_A);
+    fake_loss = self.l2(tf.zeros_like(pred_fake_A), self.DB(self.pool_B.pick(fake_A)));
     return 0.5 * (real_loss + fake_loss);
 
 if __name__ == "__main__":
