@@ -161,10 +161,7 @@ if __name__ == "__main__":
   inputs = tf.keras.Input((256,256,3));
   generator = Generator(3, 3, 64);
   results = generator(inputs);
-  generator.save('generator.h5');
   discriminator = Discriminator(3, 64, 3);
-  outputs = discriminator(results);
-  print(discriminator.outputs[0].shape)
-  discriminator.save('discriminator.h5');
-  cyclegan = CycleGAN();
-  cyclegan.save_weights('cyclegan.h5');
+  results = discriminator(inputs);
+  tf.keras.utils.plot_model(model = generator, to_file = 'generator.png', show_shapes = True, dpi = 64);
+  tf.keras.utils.plot_model(model = discriminator, to_file = 'discriminator.png', show_shapes = True, dpi = 64);
