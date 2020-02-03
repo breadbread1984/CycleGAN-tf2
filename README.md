@@ -29,7 +29,7 @@ python3 train.py
 
 after the training is completed, use the following command to save the model to h5
 
-my pretrained model is shared [here](https://pan.baidu.com/s/1b1KFohkHErF2Xuu2jCi4bg).
+my pretrained model is shared [here](https://pan.baidu.com/s/1uTVxi-iHD4SaC6swhCMtIw).
 
 ```python
 python3 save_model.py
